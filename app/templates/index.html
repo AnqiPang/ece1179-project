@@ -1,6 +1,40 @@
-{% extends "base.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>mugic</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" media="screen" href="css/style.css">
+</head>
+<body>
 
-<h1>Hello world</h1>
+<!-- particles.js container -->
+<div id="particles-js"></div>
 
-{% endblock %}
+<div id="logo">
+    <img src="img/logo_fade_round.png" alt="logo" style="width: 50vw;">
+</div>
+
+<div class="login">
+    <img src="img/icon/spotify.png" alt="login" style="width: 10vw;">
+</div>
+
+<!-- scripts -->
+<script>
+    var images = [
+                  "img/background/0.jpg",
+                  "img/background/1.jpg",
+                  "img/background/2.jpg"
+                 ];
+    var i = 0;
+    var e = document.getElementById("particles-js");
+    setInterval(function(){
+               e.style.backgroundImage = "url(" + images[i++%images.length] + ")";
+               }, 10000);
+</script>
+<script src="js/particles.js"></script>
+<script src="js/app.js"></script>
+
+
+</body>
+</html>

@@ -1,19 +1,33 @@
 <html>
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
+        <style>
+            html {
+                background: url(../static/background/index_bg.jpg) no-repeat center center fixed;
+                -webkit-background-size: cover;
+                -moz-background-size: cover;
+                -o-background-size: cover;
+                background-size: cover;
+                opacity: 1;
+            }
+        </style>
+        
         {% if title %}
         <title>{{ title }}</title>
         {% else %}
-        <title>Object Detection</title>
+        <title>Playlist Generator</title>
         {% endif %}
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='flot/jquery.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='flot/jquery.flot.js') }}"></script>
     </head>
-	<body style="background-color: 	#fffff;"></body>
+    
     <body>
         <nav class="navbar navbar-default">
             <div class="container-fluid">
@@ -25,6 +39,7 @@
                 </ul>
             </div>
         </nav>
+        
         {% with messages = get_flashed_messages() %}
         {% if messages %}
         <ul>
@@ -34,6 +49,7 @@
         </ul>
         {% endif %}
         {% endwith %}
+        
         {% block content %}{% endblock %}
     </body>
 </html>
