@@ -58,6 +58,10 @@ def home():
     playlists = sp.current_user_playlists()
     print(playlists)
 
+    for i, playlist in enumerate(playlists['items']):
+        print("%d %s" % (i, playlist['name']))
+
+
     return '<div>'+str(playlists)+'</div>\
             <br><br>\
             <a href=' + url_for('index') + '>Back to Index</a>\
