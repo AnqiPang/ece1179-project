@@ -4,14 +4,14 @@ import spotipy
 import spotipy.util as util
 from spotipy import oauth2
 import os
+from config import *
+from helpers import *
+from flask_s3 import FlaskS3
+import json
 
 webapp = Flask(__name__, static_url_path = '/static', static_folder = 'static')
-
-SPOTIPY_CLIENT_ID = '5ec5a760341246d489abaa3767016822'
-SPOTIPY_CLIENT_SECRET = '607c55218f39417a969c7bd89a089207'
-SPOTIPY_REDIRECT_URI = 'http://localhost:5000/callback/'
-SCOPE = 'user-library-read'
-CACHE = '.spotipyoauthcache1'
+webapp.config['FLASKS3_BUCKET_NAME'] = S3_BUCKET
+s3 = FlaskS3(webapp)
 
 sp_oauth = oauth2.SpotifyOAuth(SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE, cache_path=CACHE)
 
@@ -23,10 +23,25 @@ def index():
     if token_info:
         access_token = token_info['access_token']
     
+    # s3 file urls
+    css_url = S3_URL_PREFIX+'/static/css/style.css'
+    particles_js_url = S3_URL_PREFIX+'/static/js/particles.js'
+    app_js_url = S3_URL_PREFIX+'/static/js/app.js'
+    logo_url = S3_URL_PREFIX+'/static/img/logo_fade_round.png'
+    login_url = S3_URL_PREFIX+'/static/img/icon/spotify.png'
+    particle_shape_url = S3_URL_PREFIX+'/static/img/particle_shape_1.png'
+    background_urls = []
+    for i in range(3):
+        background_urls.append(S3_URL_PREFIX+'/static/img/background/'+str(i)+'.jpg')
+    
     if access_token:
-        return render_template('index.html', auth_url=url_for('home'))
+        return render_template('index.html', auth_url=url_for('home'), css_url=css_url, particles_js_url=particles_js_url,\
+                               app_js_url=app_js_url, logo_url=logo_url, login_url=login_url, particle_shape_url=particle_shape_url,\
+                               background_urls=background_urls)
     else:
-        return render_template('index.html', auth_url=sp_oauth.get_authorize_url())
+        return render_template('index.html', auth_url=sp_oauth.get_authorize_url(), css_url=css_url, particles_js_url=particles_js_url,\
+                               app_js_url=app_js_url, logo_url=logo_url, login_url=login_url, particle_shape_url=particle_shape_url,\
+                               background_urls=background_urls)
 
 @webapp.route('/callback/')
 def callback():
@@ -56,20 +71,24 @@ def home():
     # print info of user's playlists on console
     sp = spotipy.Spotify(access_token)
     playlists = sp.current_user_playlists()
-    print(playlists)
+    print(json.dumps(playlists, indent=2))
 
-    return '<div>'+str(playlists)+'</div>\
-            <br><br>\
-            <a href=' + url_for('index') + '>Back to Index</a>\
-            <br><br>\
-            <a href=' + url_for('logout') + '>Logout</a>'
+    # provide the following vars with data collected from spotify
+    playlist_names = ['playlist1', 'playlist2', 'playlist3']
+    playlist_descriptions = ['yoyo', 'yeah', 'happy']
+    playlist_covers = ['https://m.media-amazon.com/images/I/615enb8in0L._SS500_.jpg', 'https://m.media-amazon.com/images/I/615enb8in0L._SS500_.jpg', 'https://m.media-amazon.com/images/I/615enb8in0L._SS500_.jpg']
+    playlist_tracks = [[{ 'name': 'p1-t1', 'artist': 'aaa' }, { 'name': 'p1-t2', 'artist': 'bbb' },],
+                       [{ 'name': 'p2-t1', 'artist': 'aaa' }, { 'name': 'p2-t2', 'artist': 'bbb' },],
+                       [{ 'name': 'p3-t1', 'artist': 'aaa' }, { 'name': 'p3-t2', 'artist': 'bbb' },]]
+
+    return render_template('home.html', playlist_names=playlist_names, playlist_descriptions=playlist_descriptions,\
+                           playlist_covers=playlist_covers, playlist_tracks=playlist_tracks)
 
 @webapp.route('/logout')
 def logout():
     # delete cached token
     os.remove(sp_oauth.cache_path)
-    
+    '''f = open(sp_oauth.cache_path, "w")
+    f.write("{\"a\":\"b\"}")
+    f.close()'''
     return redirect(url_for('index'))
-
-if __name__ == '__main__':
-    webapp.run()

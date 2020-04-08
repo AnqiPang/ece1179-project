@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>mugic</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+    /* background and nav buttons */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    html {
+        font-size: 10px;
+        font-family: "Lato", Arial, sans-serif;
+    }
+    
+    section {
+        width: 100%;
+        height: 100vh;
+        color: #fff;
+        background: linear-gradient(-45deg, #EE7752, #E73C7E, #23A6D5, #23D5AB);
+        background-size: 400% 400%;
+        position: relative;
+        animation: change 20s ease-in-out infinite;
+    }
+    
+    .nav-button {
+        width: 120px;
+        height: 35px;
+        font-size: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-align: center;
+        border: 2px solid #fff;
+    }
+    
+    .nav-button:hover {
+        background: #fce;
+        box-shadow: 0 0 5px #fce, 0 0 10px #fce, 0 0 15px #fce;
+        cursor: pointer;
+    }
+    
+    @keyframes change {
+        0% {
+            background-position: 0 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0 50%;
+        }
+    }
+    
+    /* generate button */
+    .generate {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: inline-block;
+        padding: 15px 30px;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        text-decoration: none;
+        font-size: 24px;
+        overflow: hidden;
+        transition: 0.2s;
+    }
+    
+    .generate:hover {
+        color: #255784;
+        background: #2196f3;
+        box-shadow: 0 0 10px #2196f3, 0 0 40px #2196f3, 0 0 80px #2196f3;
+        transition-delay: 1s;
+    }
+    
+    .generate span {
+        position: absolute;
+        display: block;
+    }
+    
+    .generate span:nth-child(1) {
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #fff);
+    }
+    
+    .generate:hover span:nth-child(1) {
+        left: 100%;
+        transition: 1s;
+    }
+    
+    .generate span:nth-child(3) {
+        bottom: 0;
+        right: -100%;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(270deg, transparent, #fff);
+    }
+    
+    .generate:hover span:nth-child(3) {
+        right: 100%;
+        transition: 1s;
+        transition-delay: 0.5s;
+    }
+    
+    .generate span:nth-child(2) {
+        top: -100%;
+        right: 0;
+        width: 2px;
+        height: 100%;
+        background: linear-gradient(180deg, transparent, #fff);
+    }
+    
+    .generate:hover span:nth-child(2) {
+        top: 100%;
+        transition: 1s;
+        transition-delay: 0.25s;
+    }
+    
+    .generate span:nth-child(4) {
+        bottom: -100%;
+        left: 0;
+        width: 2px;
+        height: 100%;
+        background: linear-gradient(360deg, transparent, #fff);
+    }
+    
+    .generate:hover span:nth-child(4) {
+        bottom: 100%;
+        transition: 1s;
+        transition-delay: 0.75s;
+    }
+    
+    /* playlist */
+    .music-container {
+        font-family: sans-serif;
+        width: 350px;
+        left: 20%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: block;
+        position: absolute;
+        background: #add8e6;
+        opacity: 0.8;
+        color: #000;
+    }
+    
+    .music-header {
+        width: 100%;
+        height: 50px;
+        background: #add8e6;
+        color: #000;
+    }
+    
+    .music-header .title {
+        width: 250px;
+        height: 30px;
+        position: absolute;
+        margin-top: 10px;
+        margin-left: 45px;
+        text-align: center;
+    }
+    
+    .music-playlist {
+        width: 100%;
+        height: 450px;
+    }
+    
+    .music-menu {
+        width: 100%;
+        height: 28px;
+    }
+    
+    .menu {
+        width: 275px;
+        height: 20px;
+        margin: 5px 30px auto;
+    }
+    
+    .menu ul {
+        font-size: 10px;
+        padding: initial;
+    }
+    
+    .menu ul li {
+        list-style-type: none;
+        display: inline-block;
+        border-right: 1px solid #000;
+    }
+    
+    .menu ul li:hover {
+        background: #fce;
+        box-shadow: 0 0 5px #fce, 0 0 10px #fce, 0 0 15px #fce;
+    }
+    
+    .menu ul li a {
+        color: #000;
+        padding: 5px 40px;
+        text-decoration: none;
+        letter-spacing: 0.5px;
+    }
+    
+    .menu ul li:last-child {
+        border-right: none;
+    }
+    
+    .playlist-box {
+        width: 100%;
+        height: 410px;
+        overflow: scroll;
+        overflow-x: hidden;
+    }
+    
+    .playlist-box::-webkit-scrollbar {
+        width: 0px;
+        background: transparent;
+    }
+    
+    .playlist-box .fa-circle-o {
+        margin-right: 10px;
+        margin-top: 22px;
+        font-weight: normal;
+        color: #000;
+    }
+    
+    .playlist-box .fa-check-circle-o {
+        margin-right: 10px;
+        margin-top: 22px;
+        font-weight: normal;
+        color: #00ff00;
+    }
+    
+    .playlist-info {
+        width: 100%;
+        height: 50px;
+        display: flex;
+    }
+    
+    .playlist-info:hover {
+        background: #fce;
+        box-shadow: 0 0 5px #fce, 0 0 10px #fce, 0 0 15px #fce;
+        cursor: pointer;
+    }
+    
+    .playlist-img {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .playlist-img img {
+        width: 40px;
+        height: 40px;
+        margin: 2px 5px;
+        padding: 1px;
+    }
+    
+    .playlist-name {
+        width: 300px;
+        padding: 0 5px;
+        height: 50px;
+    }
+    
+    .playlist-name h6 {
+        margin-top: 7px;
+        font-size: 15px;
+        font-weight: normal;
+        letter-spacing: 0.5px;
+        line-height: 15px;
+    }
+    
+    .playlist-name p {
+        font-size: 8px;
+        font-style: italic;
+        letter-spacing: 0.5px;
+        line-height: 1px;
+    }
+    
+    hr {
+        width: 95%;
+        margin-top: 4px !important;
+        margin-bottom: 6px !important;
+    }
+    
+    </style>
+</head>
+<body>
+    <section>
+        <div class='music-container'>
+            <div class='music-header'>
+                <div class='title'><h2>My Playlists</h2></div>
+            </div>
+            <div class='music-playlist'>
+                <div class='playlist-box'>
+                    {% for playlist_name in playlist_names %}
+                        <div class='playlist-info' onclick="toggleTracks('{{'track-playlist'+loop.index|string}}', this)">
+                            <div class='playlist-img'>
+                                <img src="{{playlist_covers[loop.index0]}}">
+                            </div>
+                            <div class='playlist-name'>
+                                <h6>{{playlist_name}}</h6>
+                                <p>{{playlist_descriptions[loop.index0]}}</p>
+                            </div>
+                            <i class="fa fa-circle-o"></i>
+                        </div><hr>
+                        <div class='track-box' id='{{'track-playlist'+loop.index|string}}' style="display:none">
+                            {% for track in playlist_tracks[loop.index0] %}
+                                <p style="margin-left: 20px;">{{track.name}} - {{track.artist}}</p>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <a class='generate' href='#'>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            GENERATE >>
+        </a>
+        
+        <div class='nav-button' style='position:absolute; top:30px; right:30px;'><a href='{{url_for('logout')}}' style='color: #fff;'>LOGOUT</a></div>
+        <div class='nav-button' style='position:absolute; top:30px; left:30px;'><a href='{{url_for('index')}}' style='color: #fff;'>BACK</a></div>
+    </section>
+    
+    <script>
+        function toggleTracks(playlistID, obj) {
+            var e = document.getElementById(playlistID);
+            if (e.style.display == "none") {
+                e.style.display = "block";
+                
+                var unchecked = obj.getElementsByClassName("fa fa-circle-o")[0];
+                var checked = document.createElement("i");
+                checked.className = "fa fa-check-circle-o";
+                unchecked.parentNode.replaceChild(checked, unchecked);
+                
+                // collapse and uncheck all other playlists
+                var trackBoxes = obj.parentNode.getElementsByClassName("track-box");
+                var i;
+                for (i = 0; i < trackBoxes.length; i++) {
+                    if (trackBoxes[i].id !== playlistID) {
+                        trackBoxes[i].style.display = "none";
+                    }
+                }
+                var playlists = obj.parentNode.getElementsByClassName("playlist-info");
+                var i;
+                for (i = 0; i < playlists.length; i++) {
+                    if (playlists[i] !== obj) {
+                        if (playlists[i].getElementsByClassName("fa fa-check-circle-o").length !== 0) {
+                            var checked = playlists[i].getElementsByClassName("fa fa-check-circle-o")[0];
+                            var unchecked = document.createElement("i");
+                            unchecked.className = "fa fa-circle-o";
+                            checked.parentNode.replaceChild(unchecked, checked);
+                        }
+                    }
+                }
+            }
+            else {
+                e.style.display = "none";
+                
+                var checked = obj.getElementsByClassName("fa fa-check-circle-o")[0];
+                var unchecked = document.createElement("i");
+                unchecked.className = "fa fa-circle-o";
+                checked.parentNode.replaceChild(unchecked, checked);
+            }
+        }
+    </script>
+</body>
+</html>
