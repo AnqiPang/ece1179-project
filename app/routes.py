@@ -80,22 +80,78 @@ def home():
     pl_ids = []
     pl_descriptions = []
 
+    pl_track_ids = []
+    pl_track_names = []
+    pl_art_ids = []
+    pl_art_names = []
+    pl_track_dicts = []
+
     for i, playlist in enumerate(playlists['items']):
+        track_names = []
+        track_ids = []
+        art_names =[]
+        art_ids =[]
+        current_tracks_list = list()
         print("%d %s" % (i, playlist['name']))
         pl_names.append(playlist['name'])
         pl_image_urls.append(playlist['images'][0]['url'])
         pl_ids.append(playlist['id'])
         pl_descriptions.append(playlist['description'])
+        results = sp.playlist(playlist['id'], fields= "tracks,next")
+        print("results:", results)
+        tracks = results['tracks']
+        print("tracks:", tracks)
+
+        for i, item in enumerate(tracks['items']):
+            track = item['track']
+            track_names.append(track['name'])
+            track_ids.append(track['id'])
+            art_names = art_names + [d['name'] for d in track['artists']]
+            art_ids = art_ids + [d['id'] for d in track['artists']]
+            current_artist = [d['name'] for d in track['artists']]
+            current_tracks_list = current_tracks_list + [{'name': track['name'], 'artist': ' '.join([str(elem) for elem in current_artist])} ]
+            print(
+                (i, track['artists'][0]['name'], track['name']))
+        #art_names = art_names + [d['name'] for d in track['artists']]
+        #art_ids = art_ids + [d['id'] for d in track['artists']]
+
+
+
+        while tracks['next']:
+            tracks = sp.next(tracks)
+
+            for i, item in enumerate(tracks['items']):
+                track = item['track']
+                track_names.append(track['name'])
+                track_ids.append(track['id'])
+                art_names = art_names + [d['name'] for d in track['artists']]
+                art_ids = art_ids + [d['id'] for d in track['artists']]
+                current_artist = [d['name'] for d in track['artists']]
+                current_tracks_list = current_tracks_list + [{'name': track['name'], 'artist': ' '.join([str(elem) for elem in current_artist])}]
+                print(
+                    i, [d['name'] for d in track['artists']], track['name'])
+
+
+        pl_track_names.append(track_names)
+        pl_track_ids.append(track_ids)
+        pl_art_ids.append(art_ids)
+        pl_art_names.append(art_names)
+        pl_track_dicts.append(current_tracks_list)
+        print("current_tracks_list:", current_tracks_list)
     print(pl_names)
     print(pl_image_urls)
     print(pl_ids)
     print(pl_descriptions)
+    print("pl_track_dicts[0]:", pl_track_dicts[0])
 
-    pl_track_ids = []
-    pl_track_names = []
-    pl_art_ids = []
-    pl_art_names = []
+    print("pl_track_names: ", pl_track_names)
+    print("pl_track_ids: ", pl_track_ids)
+    print("pl_art_names: ", pl_art_names)
+    print("pl_art_ids: ", pl_art_ids)
+    print("num of artists: ", len(pl_art_ids[1]))
 
+
+    """
     for pl_id in pl_ids:
         track_names = []
         track_ids = []
@@ -122,9 +178,10 @@ def home():
             if len(response['items'])==0:
                 break
             print(offset, "/", response['total'])
+    """
 
 
-        """    
+    """    
             track_names = track_names + [d['track']['name'] for d in response['items']]
             track_ids = track_ids + [d['track']['id'] for d in response['items']]
             print(offset, "/", response['total'])
@@ -141,12 +198,13 @@ def home():
             # art_name = track['album']['artists'][0]['name']
             art_names = art_names + [d['name'] for d in track['artists']]
             art_ids = art_ids + [d['id'] for d in track['artists']]
-        """
-
+    """
+    """
         pl_track_ids.append(track_ids)
         pl_track_names.append(track_names)
         pl_art_names.append(art_names)
         pl_art_ids.append(art_ids)
+    """
 
 
     print("playlist track names: ", pl_track_names)
@@ -156,12 +214,12 @@ def home():
     playlist_names = ['playlist1', 'playlist2', 'playlist3']
     playlist_descriptions = ['yoyo', 'yeah', 'happy']
     playlist_covers = ['https://m.media-amazon.com/images/I/615enb8in0L._SS500_.jpg', 'https://m.media-amazon.com/images/I/615enb8in0L._SS500_.jpg', 'https://m.media-amazon.com/images/I/615enb8in0L._SS500_.jpg']
-    playlist_tracks = [[{ 'name': 'p1-t1', 'artist': 'aaa' }, { 'name': 'p1-t2', 'artist': 'bbb' },],
-                       [{ 'name': 'p2-t1', 'artist': 'aaa' }, { 'name': 'p2-t2', 'artist': 'bbb' },],
-                       [{ 'name': 'p3-t1', 'artist': 'aaa' }, { 'name': 'p3-t2', 'artist': 'bbb' },]]
+    playlist_tracks = [[[{ 'name': 'p1-t1', 'artist': 'aaa' }], [{ 'name': 'p1-t2', 'artist': 'bbb' }],],
+                       [[{ 'name': 'p2-t1', 'artist': 'aaa' }], [{ 'name': 'p2-t2', 'artist': 'bbb' }],],
+                       [[{ 'name': 'p3-t1', 'artist': 'aaa' }], [{ 'name': 'p3-t2', 'artist': 'bbb' }],]]
 
     return render_template('home.html', playlist_names=pl_names, playlist_descriptions=pl_descriptions,\
-                           playlist_covers=pl_image_urls, playlist_tracks=playlist_tracks)
+                           playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts)
 
 @webapp.route('/logout')
 def logout():
