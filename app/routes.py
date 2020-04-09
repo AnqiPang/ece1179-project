@@ -8,7 +8,7 @@ from config import *
 from helpers import *
 from flask_s3 import FlaskS3
 import json
-import requests
+from pprint import pprint
 
 webapp = Flask(__name__, static_url_path = '/static', static_folder = 'static')
 webapp.config['FLASKS3_BUCKET_NAME'] = S3_BUCKET
@@ -70,21 +70,86 @@ def home():
         return render_template('index.html', auth_url=sp_oauth.get_authorize_url())
 
     sp = spotipy.Spotify(access_token)
-#me = sp.me()
-#print(json.dumps(me, indent=2))
+    playlists = sp.current_user_playlists()
+    print("playlists")
+    print(json.dumps(playlists, indent=2))
+
+    pl_names = []
+    pl_image_urls =[]
+    pl_ids = []
+    pl_descriptions = []
+
+    for i, playlist in enumerate(playlists['items']):
+        print("%d %s" % (i, playlist['name']))
+        pl_names.append(playlist['name'])
+        pl_image_urls.append(playlist['images'][0]['url'])
+        pl_ids.append(playlist['id'])
+        pl_descriptions.append(playlist['description'])
+    print(pl_names)
+    print(pl_image_urls)
+    print(pl_ids)
+    print(pl_descriptions)
+
+    pl_track_ids = []
+    pl_track_names = []
+    pl_art_ids = []
+    pl_art_names = []
+
+    for pl_id in pl_ids:
+        track_names = []
+        track_ids = []
+        art_ids = []
+        art_names = []
+        # sp = spotipy.Spotify(client_credentials_manager=oauth2.SpotifyClientCredentials)
+        offset = 0
+        while True:
+            response = sp.playlist_tracks(pl_id,
+                                          offset=offset,
+                                          fields='items.track.id,items.track.name,total')
+            pprint(response)
+            print("items ", response['items'])
+
+            offset = offset + len(response['items'])
+            for item in response['items']:
+                track_names.append(item['track']['name'])
+                track_ids.append(item['track']['id'])
+                track_uri = 'spotify:track:' + str(item['track']['id'])
+                track = sp.track(track_uri)
+                for d in track['artists']:
+                    art_names.append(d['name'])
+                    art_ids.append(d['id'])
+            if len(response['items'])==0:
+                break
+            print(offset, "/", response['total'])
 
 
+        """    
+            track_names = track_names + [d['track']['name'] for d in response['items']]
+            track_ids = track_ids + [d['track']['id'] for d in response['items']]
+            print(offset, "/", response['total'])
+
+            if len(response['items']) == 0:
+                break
+        #pl_track_ids.append(track_ids)
+        art_names = []
+        art_ids = []
+        for track in track_ids:
+            # urn = 'spotify:track:6TqXcAFInzjp0bODyvrWEq'
+            uri = 'spotify:track:' + str(track)
+            track = sp.track(uri)
+            # art_name = track['album']['artists'][0]['name']
+            art_names = art_names + [d['name'] for d in track['artists']]
+            art_ids = art_ids + [d['id'] for d in track['artists']]
+        """
+
+        pl_track_ids.append(track_ids)
+        pl_track_names.append(track_names)
+        pl_art_names.append(art_names)
+        pl_art_ids.append(art_ids)
 
 
-    sp = spotipy.Spotify(access_token)
-    artist_uri_or_url_or_id = 'spotify:artist:36QJpDe2go2KgaRleHCDTp'
-    results = sp.artist(artist_uri_or_url_or_id)
-    print(json.dumps(results, indent=2))
-
-
-
-
-
+    print("playlist track names: ", pl_track_names)
+    print("playlist artisit names: ", pl_art_names)
 
     # provide the following vars with data collected from spotify
     playlist_names = ['playlist1', 'playlist2', 'playlist3']
@@ -95,8 +160,8 @@ def home():
                        [{ 'name': 'p3-t1', 'artist': 'aaa' }, { 'name': 'p3-t2', 'artist': 'bbb' },]]
     user_avator = sp.me()['images'][0]['url']
 
-    return render_template('home.html', playlist_names=playlist_names, playlist_descriptions=playlist_descriptions,\
-                           playlist_covers=playlist_covers, playlist_tracks=playlist_tracks, user_avator=user_avator)
+    return render_template('home.html', playlist_names=pl_names, playlist_descriptions=pl_descriptions,\
+                           playlist_covers=pl_image_urls, playlist_tracks=playlist_tracks)
 
 @webapp.route('/logout')
 def logout():
@@ -106,3 +171,7 @@ def logout():
     f.write("{\"a\":\"b\"}")
     f.close()'''
     return redirect(url_for('index'))
+
+
+
+webapp.run()
