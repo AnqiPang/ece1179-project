@@ -230,6 +230,62 @@ def logout():
     f.close()'''
     return redirect(url_for('index'))
 
+@webapp.route('/home/<id>')
+def generate(id):
+    access_token = ''
+    token_info = sp_oauth.get_cached_token()
+    if token_info:
+        access_token = token_info['access_token']
+
+    if not access_token:
+        return render_template('index.html', auth_url=sp_oauth.get_authorize_url())
+
+    sp = spotipy.Spotify(access_token)
+    track_ids = []
+
+    # sp = spotipy.Spotify(client_credentials_manager=oauth2.SpotifyClientCredentials)
+    offset = 0
+    while True:
+        response = sp.playlist_tracks(id,
+                                      offset=offset,
+                                      fields='items.track.id,total')
+        pprint(response)
+        print("items ", response['items'])
+
+        offset = offset + len(response['items'])
+        track_ids = track_ids + [d['track']['id'] for d in response['items']]
+        print(offset, "/", response['total'])
+
+        if len(response['items']) == 0:
+            break
+
+    pl_art_names = []
+    pl_art_ids = []
+    pl_art_genres = []
+    for track in track_ids:
+        # urn = 'spotify:track:6TqXcAFInzjp0bODyvrWEq'
+        uri = 'spotify:track:' + str(track)
+        track = sp.track(uri)
+        # art_name = track['album']['artists'][0]['name']
+        pl_art_names = pl_art_names + [d['name'] for d in track['artists']]
+        pl_art_ids = pl_art_ids + [d['id'] for d in track['artists']]
+
+    for artist in pl_art_ids:
+        art_genre = sp.artists(artist)
+        pl_art_genres.append(art_genre)
+
+    print("playlist track ids: ", track_ids)
+    print("playlist artist ids: ", pl_art_ids)
+    print("playlist artisit names: ", pl_art_names)
+    print("playlist artisit genres: ", pl_art_genres)
+
+    return '<div>' + str(response['items']) + '</div>\
+            <div>' + str(track_ids) + '</div>'
+
+
+
+
+
 
 
 webapp.run()
