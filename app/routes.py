@@ -9,6 +9,7 @@ from helpers import *
 from flask_s3 import FlaskS3
 import json
 from pprint import pprint
+import requests
 
 webapp = Flask(__name__, static_url_path = '/static', static_folder = 'static')
 webapp.config['FLASKS3_BUCKET_NAME'] = S3_BUCKET
@@ -158,10 +159,12 @@ def home():
     playlist_tracks = [[{ 'name': 'p1-t1', 'artist': 'aaa' }, { 'name': 'p1-t2', 'artist': 'bbb' },],
                        [{ 'name': 'p2-t1', 'artist': 'aaa' }, { 'name': 'p2-t2', 'artist': 'bbb' },],
                        [{ 'name': 'p3-t1', 'artist': 'aaa' }, { 'name': 'p3-t2', 'artist': 'bbb' },]]
-    user_avator = sp.me()['images'][0]['url']
+    user_avator = S3_URL_PREFIX+'/static/img/icon/spotify.png'
+    if len(sp.me()['images']) != 0:
+        user_avator = sp.me()['images'][0]['url']
 
     return render_template('home.html', playlist_names=pl_names, playlist_descriptions=pl_descriptions,\
-                           playlist_covers=pl_image_urls, playlist_tracks=playlist_tracks)
+                           playlist_covers=pl_image_urls, playlist_tracks=playlist_tracks, user_avator=user_avator)
 
 @webapp.route('/logout')
 def logout():
