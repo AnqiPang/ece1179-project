@@ -8,6 +8,7 @@ from config import *
 from helpers import *
 from flask_s3 import FlaskS3
 import json
+import requests
 
 webapp = Flask(__name__, static_url_path = '/static', static_folder = 'static')
 webapp.config['FLASKS3_BUCKET_NAME'] = S3_BUCKET
@@ -68,21 +69,34 @@ def home():
     if not access_token:
         return render_template('index.html', auth_url=sp_oauth.get_authorize_url())
 
-    # print info of user's playlists on console
     sp = spotipy.Spotify(access_token)
-    playlists = sp.current_user_playlists()
-    print(json.dumps(playlists, indent=2))
+#me = sp.me()
+#print(json.dumps(me, indent=2))
+
+
+
+
+    sp = spotipy.Spotify(access_token)
+    artist_uri_or_url_or_id = 'spotify:artist:36QJpDe2go2KgaRleHCDTp'
+    results = sp.artist(artist_uri_or_url_or_id)
+    print(json.dumps(results, indent=2))
+
+
+
+
+
 
     # provide the following vars with data collected from spotify
     playlist_names = ['playlist1', 'playlist2', 'playlist3']
-    playlist_descriptions = ['yoyo', 'yeah', 'happy']
+    playlist_descriptions = ['yoyo', 'yeah', 'happyasfsadgsdfgrsdrtersfgsddsfdasdsaewrtewrewrewr']
     playlist_covers = ['https://m.media-amazon.com/images/I/615enb8in0L._SS500_.jpg', 'https://m.media-amazon.com/images/I/615enb8in0L._SS500_.jpg', 'https://m.media-amazon.com/images/I/615enb8in0L._SS500_.jpg']
     playlist_tracks = [[{ 'name': 'p1-t1', 'artist': 'aaa' }, { 'name': 'p1-t2', 'artist': 'bbb' },],
                        [{ 'name': 'p2-t1', 'artist': 'aaa' }, { 'name': 'p2-t2', 'artist': 'bbb' },],
                        [{ 'name': 'p3-t1', 'artist': 'aaa' }, { 'name': 'p3-t2', 'artist': 'bbb' },]]
+    user_avator = sp.me()['images'][0]['url']
 
     return render_template('home.html', playlist_names=playlist_names, playlist_descriptions=playlist_descriptions,\
-                           playlist_covers=playlist_covers, playlist_tracks=playlist_tracks)
+                           playlist_covers=playlist_covers, playlist_tracks=playlist_tracks, user_avator=user_avator)
 
 @webapp.route('/logout')
 def logout():

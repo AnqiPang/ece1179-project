@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>mugic</title>
+    <title>mugic - home</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <style>
-    /* background and nav buttons */
+    /* background */
     * {
         margin: 0;
         padding: 0;
@@ -29,22 +29,6 @@
         animation: change 20s ease-in-out infinite;
     }
     
-    .nav-button {
-        width: 120px;
-        height: 35px;
-        font-size: 2rem;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        text-align: center;
-        border: 2px solid #fff;
-    }
-    
-    .nav-button:hover {
-        background: #fce;
-        box-shadow: 0 0 5px #fce, 0 0 10px #fce, 0 0 15px #fce;
-        cursor: pointer;
-    }
-    
     @keyframes change {
         0% {
             background-position: 0 50%;
@@ -57,10 +41,41 @@
         }
     }
     
+    /* nav buttons */
+    .nav-button {
+        width: 120px;
+        height: 35px;
+        font-size: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-align: center;
+    }
+    
+    .nav-button:hover {
+        background: #fce;
+        box-shadow: 0 0 5px #fce, 0 0 10px #fce, 0 0 15px #fce;
+        cursor: pointer;
+    }
+    
+    /* avator */
+    #avatar {
+        background-image: url('{{user_avator}}');
+        width: 100px;
+        height: 100px;
+        background-size: cover;
+        background-position: top center;
+        border-radius: 50%;
+        position: absolute;
+        left: 50%;
+        top: 70px;
+        margin-left: -50px;
+        margin-top: -50px;
+    }
+    
     /* generate button */
     .generate {
         position: absolute;
-        top: 50%;
+        top: 40%;
         left: 50%;
         transform: translate(-50%, -50%);
         display: inline-block;
@@ -139,6 +154,14 @@
         bottom: 100%;
         transition: 1s;
         transition-delay: 0.75s;
+    }
+    
+    /* piechart */
+    .piechart {
+        width: 320px;
+        height: 200px;
+        position: absolute;
+        left: 38%;
     }
     
     /* playlist */
@@ -244,6 +267,7 @@
         width: 100%;
         height: 50px;
         display: flex;
+        word-wrap: break-word;
     }
     
     .playlist-info:hover {
@@ -332,8 +356,14 @@
         
         <div class='nav-button' style='position:absolute; top:30px; right:30px;'><a href='{{url_for('logout')}}' style='color: #fff;'>LOGOUT</a></div>
         <div class='nav-button' style='position:absolute; top:30px; left:30px;'><a href='{{url_for('index')}}' style='color: #fff;'>BACK</a></div>
+        
+        <div id="avatar"></div>
+        
+        <div class="piechart" id="piechart-genre" style="bottom:-10px;"></div>
+        <div class="piechart" id="piechart-artist" style="bottom:150px;"></div>
     </section>
     
+    <!-- playlist script -->
     <script>
         function toggleTracks(playlistID, obj) {
             var e = document.getElementById(playlistID);
@@ -374,6 +404,45 @@
                 unchecked.className = "fa fa-circle-o";
                 checked.parentNode.replaceChild(unchecked, checked);
             }
+        }
+    </script>
+    
+    <!-- pie chart script -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', {'packages':['corechart']});
+        google.charts.setOnLoadCallback(drawChart);
+        
+        function drawChart() {
+            var data_genre = google.visualization.arrayToDataTable([
+                                                                    ['Genre', 'Number of Tracks'],
+                                                                    ['Pop',     11],
+                                                                    ['R&B',      2],
+                                                                    ['Metal',  2],
+                                                                    ['Jazz', 2],
+                                                                    ['Rock',    7],
+                                                                    ['Others',    5]
+                                                                    ]);
+                                                              
+            var data_artist = google.visualization.arrayToDataTable([
+                                                                    ['Artist', 'Number of Tracks'],
+                                                                    ['Utada Hikaru',     9],
+                                                                    ['Sheena Ringo',      3],
+                                                                    ['Maroon 5',  4],
+                                                                    ['Daft Punk', 7],
+                                                                    ['Nightwish', 2],
+                                                                    ['Others',    7]
+                                                                    ]);
+                                                              
+            var options = {
+                backgroundColor: { fill:'transparent' }
+            };
+
+            var chart_genre = new google.visualization.PieChart(document.getElementById('piechart-genre'));
+            var chart_artist = new google.visualization.PieChart(document.getElementById('piechart-artist'));
+
+            chart_genre.draw(data_genre, options);
+            chart_artist.draw(data_artist, options);
         }
     </script>
 </body>
