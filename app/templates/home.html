@@ -73,6 +73,10 @@
     }
     
     /* generate button */
+    .element-hidden {
+        visibility: hidden;
+    }
+    
     .generate {
         position: absolute;
         top: 40%;
@@ -165,7 +169,7 @@
     }
     
     /* playlist */
-    .music-container {
+    .music-container-user {
         font-family: sans-serif;
         width: 350px;
         left: 20%;
@@ -178,9 +182,22 @@
         color: #000;
     }
     
+    .music-container-gen {
+        font-family: sans-serif;
+        width: 350px;
+        right: 20%;
+        top: 50%;
+        transform: translate(50%, -50%);
+        display: block;
+        position: absolute;
+        background: #add8e6;
+        opacity: 0.8;
+        color: #000;
+    }
+    
     .music-header {
         width: 100%;
-        height: 50px;
+        height: 60px;
         background: #add8e6;
         color: #000;
     }
@@ -263,11 +280,17 @@
         color: #00ff00;
     }
     
+    .playlist-box .fa-exclamation-circle {
+        margin-right: 10px;
+        margin-top: 22px;
+        font-weight: normal;
+        color: #000;
+    }
+    
     .playlist-info {
         width: 100%;
-        height: 50px;
+        height: 60px;
         display: flex;
-        word-wrap: break-word;
     }
     
     .playlist-info:hover {
@@ -277,13 +300,13 @@
     }
     
     .playlist-img {
-        width: 50px;
-        height: 50px;
+        width: 60px;
+        height: 60px;
     }
     
     .playlist-img img {
-        width: 40px;
-        height: 40px;
+        width: 50px;
+        height: 50px;
         margin: 2px 5px;
         padding: 1px;
     }
@@ -291,7 +314,7 @@
     .playlist-name {
         width: 300px;
         padding: 0 5px;
-        height: 50px;
+        height: 60px;
     }
     
     .playlist-name h6 {
@@ -319,14 +342,16 @@
 </head>
 <body>
     <section>
-        <div class='music-container'>
+        <!-- user playlists -->
+        <div id='user-playlist' class='music-container-user'>
             <div class='music-header'>
                 <div class='title'><h2>My Playlists</h2></div>
             </div>
             <div class='music-playlist'>
                 <div class='playlist-box'>
                     {% for playlist_name in playlist_names %}
-                        <div class='playlist-info' onclick="toggleTracks('{{'track-playlist'+loop.index|string}}', this)">
+                    {% if playlist_tracks[loop.index0]|length > 0 %}
+                        <div class='playlist-info' onclick="toggleTracks('{{'track-playlist'+loop.index|string}}', {{ loop.index0 }}, this)">
                             <div class='playlist-img'>
                                 <img src="{{playlist_covers[loop.index0]}}">
                             </div>
@@ -338,15 +363,54 @@
                         </div><hr>
                         <div class='track-box' id='{{'track-playlist'+loop.index|string}}' style="display:none">
                             {% for track in playlist_tracks[loop.index0] %}
-                                <p style="margin-left: 20px;">{{track.name}} - {{track.artist}}</p>
+                            <p style="margin-left: 20px; margin-right: 20px;"><b>{{loop.index}}. </b>{{track.name}} - <i>{{track.artist}}</i></p>
                             {% endfor %}
                         </div>
+                    {% else %}
+                        <div class='playlist-info'>
+                            <div class='playlist-img'>
+                                <img src="{{playlist_covers[loop.index0]}}">
+                            </div>
+                            <div class='playlist-name'>
+                                <h6>{{playlist_name}}</h6>
+                                <p>{{playlist_descriptions[loop.index0]}}</p>
+                            </div>
+                            <i class="fa fa-exclamation-circle"></i>
+                        </div><hr>
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>
         </div>
         
-        <a class='generate' href='#'>
+        <!-- generated playlist -->
+        {% if gen_track_names|length > 0 %}
+        <div id='generated-playlist' class='music-container-gen'>
+            <div class='music-header'>
+                <div class='title'>
+                    <h2>Last Generated Playlist</h2>
+                    <h4>Based on <i>{{pl_name}}</i></h4>
+                </div>
+            </div>
+            <div class='music-playlist'>
+                <div class='playlist-box'>
+                    {% for gen_track_name in gen_track_names %}
+                    <div class='playlist-info'>
+                        <div class='playlist-img'>
+                            <img src="{{gen_track_covers[loop.index0]}}">
+                                </div>
+                        <div class='playlist-name'>
+                            <h6>{{gen_track_name}}</h6>
+                            <p>{{gen_track_artists[loop.index0]}}</p>
+                        </div>
+                    </div><hr>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <a id='generate-button' class='generate element-hidden' href='#' onclick="generate(this);" disabled>
             <span></span>
             <span></span>
             <span></span>
@@ -365,9 +429,29 @@
     
     <!-- playlist script -->
     <script>
-        function toggleTracks(playlistID, obj) {
+        var selectedPlIndex = -1;
+        var plIds = {{ playlist_ids|safe }};
+        
+        function generate(obj) {
+            if (selectedPlIndex >= 0) {
+                obj.href="/home/".concat(plIds[selectedPlIndex].toString());
+            }
+        }
+        
+        function toggleTracks(playlistID, index, obj) {
             var e = document.getElementById(playlistID);
             if (e.style.display == "none") {
+                gen_button = document.getElementById("generate-button");
+                try {
+                    gen_button.disabled = false;
+                    gen_button.classList.remove("element-hidden");
+                }
+                catch(err) {
+                    
+                }
+                
+                selectedPlIndex = index;
+                
                 e.style.display = "block";
                 
                 var unchecked = obj.getElementsByClassName("fa fa-circle-o")[0];
@@ -397,6 +481,17 @@
                 }
             }
             else {
+                gen_button = document.getElementById("generate-button");
+                try {
+                    gen_button.disabled = true;
+                    gen_button.classList.add("element-hidden");
+                }
+                catch(err) {
+                    
+                }
+                
+                selectedPlIndex = -1;
+                
                 e.style.display = "none";
                 
                 var checked = obj.getElementsByClassName("fa fa-check-circle-o")[0];
@@ -414,35 +509,39 @@
         google.charts.setOnLoadCallback(drawChart);
         
         function drawChart() {
-            var data_genre = google.visualization.arrayToDataTable([
-                                                                    ['Genre', 'Number of Tracks'],
-                                                                    ['Pop',     11],
-                                                                    ['R&B',      2],
-                                                                    ['Metal',  2],
-                                                                    ['Jazz', 2],
-                                                                    ['Rock',    7],
-                                                                    ['Others',    5]
-                                                                    ]);
-                                                              
-            var data_artist = google.visualization.arrayToDataTable([
-                                                                    ['Artist', 'Number of Tracks'],
-                                                                    ['Utada Hikaru',     9],
-                                                                    ['Sheena Ringo',      3],
-                                                                    ['Maroon 5',  4],
-                                                                    ['Daft Punk', 7],
-                                                                    ['Nightwish', 2],
-                                                                    ['Others',    7]
-                                                                    ]);
-                                                              
-            var options = {
-                backgroundColor: { fill:'transparent' }
-            };
-
-            var chart_genre = new google.visualization.PieChart(document.getElementById('piechart-genre'));
-            var chart_artist = new google.visualization.PieChart(document.getElementById('piechart-artist'));
-
-            chart_genre.draw(data_genre, options);
-            chart_artist.draw(data_artist, options);
+            if ({{ gen_genres|safe }}.length == 0 || {{ gen_artists|safe }}.length == 0) {
+                return;
+            }
+            
+            var genres = [['Genre', 'Number of Tracks']];
+            var i;
+            for (i = 0; i < {{ gen_genres|safe }}.length; i++) {
+                genres.push([{{ gen_genres|safe }}[i][0], {{ gen_genres|safe }}[i][1]]);
+            }
+            
+            var artists = [['Artist', 'Number of Tracks']];
+            for (i = 0; i < {{ gen_artists|safe }}.length; i++) {
+                artists.push([{{ gen_artists|safe }}[i][0], {{ gen_artists|safe }}[i][1]]);
+            }
+            
+            try {
+                var data_genre = google.visualization.arrayToDataTable(genres);
+                
+                var data_artist = google.visualization.arrayToDataTable(artists);
+                
+                var options = {
+                    backgroundColor: { fill:'transparent' }
+                };
+                
+                var chart_genre = new google.visualization.PieChart(document.getElementById('piechart-genre'));
+                var chart_artist = new google.visualization.PieChart(document.getElementById('piechart-artist'));
+                
+                chart_genre.draw(data_genre, options);
+                chart_artist.draw(data_artist, options);
+            }
+            catch(err) {
+                alert(err.message);
+            }
         }
     </script>
 </body>
