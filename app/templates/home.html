@@ -338,6 +338,12 @@
         margin-bottom: 6px !important;
     }
     
+    .track-preview {
+        width: 100%;
+        height: 12px;
+        display: flex;
+    }
+    
     </style>
 </head>
 <body>
@@ -388,8 +394,8 @@
         <div id='generated-playlist' class='music-container-gen'>
             <div class='music-header'>
                 <div class='title'>
-                    <h2>Last Generated Playlist</h2>
-                    <h4>Based on <i>{{pl_name}}</i></h4>
+                    <h2>Generated Playlist</h2>
+                    <h4>Inspired by <i>{{pl_name}}</i></h4>
                 </div>
             </div>
             <div class='music-playlist'>
@@ -403,7 +409,9 @@
                             <h6>{{gen_track_name}}</h6>
                             <p>{{gen_track_artists[loop.index0]}}</p>
                         </div>
-                    </div><hr>
+                    </div>
+                    <div class='track-preview'><audio controls style='height: 15px;'><source src="{{gen_track_previews[loop.index0]}}"></audio></div>
+                    <hr>
                     {% endfor %}
                 </div>
             </div>

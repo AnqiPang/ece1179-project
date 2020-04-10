@@ -10,6 +10,8 @@ from flask_s3 import FlaskS3
 import json
 from pprint import pprint
 import requests
+import boto3
+from datetime import datetime
 
 webapp = Flask(__name__, static_url_path = '/static', static_folder = 'static')
 webapp.config['FLASKS3_BUCKET_NAME'] = S3_BUCKET
@@ -35,6 +37,7 @@ gen_art_genres = []
 gen_track_names = []
 gen_track_artists = []
 gen_track_covers = []
+gen_track_previews = []
 
 @webapp.route('/')
 @webapp.route('/index')
@@ -248,8 +251,8 @@ def home():
     return render_template('home.html', playlist_names=pl_names, playlist_descriptions=pl_descriptions,\
                            playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts, user_avator=user_avator,\
                            playlist_ids=json.dumps(pl_ids), gen_track_names=gen_track_names, gen_track_artists=gen_track_artists,\
-                           gen_track_covers=gen_track_covers, gen_artists=json.dumps(gen_art_names), gen_genres=json.dumps(gen_art_genres),\
-                           pl_name=pl_name)
+                           gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
+                           gen_genres=json.dumps(gen_art_genres), pl_name=pl_name)
 
 @webapp.route('/logout')
 def logout():
@@ -286,6 +289,7 @@ def logout():
     global gen_track_names
     global gen_track_artists
     global gen_track_covers
+    global gen_track_previews
 
     pl_name = ''
     gen_art_names = []
@@ -293,6 +297,7 @@ def logout():
     gen_track_names = []
     gen_track_artists = []
     gen_track_covers = []
+    gen_track_previews = []
     
     return redirect(url_for('index'))
 
@@ -312,6 +317,7 @@ def generate(id):
     global gen_track_names
     global gen_track_artists
     global gen_track_covers
+    global gen_track_previews
 
     pl_name = ''
     gen_art_names = []
@@ -319,6 +325,7 @@ def generate(id):
     gen_track_names = []
     gen_track_artists = []
     gen_track_covers = []
+    gen_track_previews = []
 
     sp = spotipy.Spotify(access_token)
     track_ids = []
@@ -393,6 +400,7 @@ def generate(id):
             gen_art_ids_dict[artist['id']] = gen_art_ids_dict.get(artist['id'], 0) + 1
             gen_art_names_dict[artist['name']] = gen_art_names_dict.get(artist['name'], 0) + 1
         gen_track_covers.append(t['album']['images'][0]['url'])
+        gen_track_previews.append(t['preview_url'])
 
     for artist_id in gen_art_ids_dict.keys():
         genres = sp.artist(artist_id)['genres']
@@ -403,11 +411,35 @@ def generate(id):
     gen_art_names = sorted(gen_art_names_dict.items(), key=lambda kv: kv[1], reverse=True)
     gen_art_genres = sorted(gen_art_genres_dict.items(), key=lambda kv: kv[1], reverse=True)
 
+    # save generated playlist to dynamodb
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('mugic_playlist')
+    table.put_item(Item={
+                      'created_on_by': datetime.now().strftime('%Y-%m-%d %H:%M:%S')+' by '+sp.me()['id'],
+                      'inspired_by': pl_name,
+                      'track_names': gen_track_names,
+                      'track_artists': gen_track_artists,
+                      'track_covers': gen_track_covers,
+                      'track_previews': gen_track_previews,
+                      'artist_names': gen_art_names_dict,
+                      'genres': gen_art_genres_dict
+                      })
+    '''dynamodb.put_item(TableName='mugic_playlist', Item={
+                             'created_on_by':{'S':datetime.now().strftime('%Y-%m-%d %H:%M:%S')+' by '+sp.me()['id']},
+                             'inspired_by':{'S':pl_name},
+                             'track_names':{"L":gen_track_names},
+                             'track_artists':{"L":gen_track_artists},
+                             'track_covers':{"L":gen_track_covers},
+                             'track_previews':{"L":gen_track_previews},
+                             'artist_names':{"M":gen_art_names_dict},
+                             'genres':{"M":gen_art_genres_dict},
+                             })'''
+
     return render_template('home.html', playlist_names=pl_names, playlist_descriptions=pl_descriptions,\
                            playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts, user_avator=user_avator,\
                            playlist_ids=json.dumps(pl_ids), gen_track_names=gen_track_names, gen_track_artists=gen_track_artists,\
-                           gen_track_covers=gen_track_covers, gen_artists=json.dumps(gen_art_names), gen_genres=json.dumps(gen_art_genres),\
-                           pl_name=pl_name)
+                           gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
+                           gen_genres=json.dumps(gen_art_genres), pl_name=pl_name)
 
 
 

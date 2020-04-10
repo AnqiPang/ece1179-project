@@ -2,7 +2,7 @@
 SPOTIPY_CLIENT_ID = '5ec5a760341246d489abaa3767016822'
 SPOTIPY_CLIENT_SECRET = '607c55218f39417a969c7bd89a089207'
 SPOTIPY_REDIRECT_URI = 'http://localhost:5000/callback/'
-SCOPE = 'user-library-read'
+SCOPE = 'user-library-read playlist-modify-public'
 CACHE = '.spotipyoauthcache1'
 
 # aws
