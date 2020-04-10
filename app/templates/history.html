@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>mugic - home</title>
+    <title>mugic - history</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -162,10 +162,10 @@
     
     /* piechart */
     .piechart {
-        width: 320px;
-        height: 200px;
+        width: 480px;
+        height: 300px;
         position: absolute;
-        left: 38%;
+        left: 30%;
     }
     
     /* playlist */
@@ -266,21 +266,7 @@
         background: transparent;
     }
     
-    .playlist-box .fa-circle-o {
-        margin-right: 10px;
-        margin-top: 22px;
-        font-weight: normal;
-        color: #000;
-    }
-    
-    .playlist-box .fa-check-circle-o {
-        margin-right: 10px;
-        margin-top: 22px;
-        font-weight: normal;
-        color: #00ff00;
-    }
-    
-    .playlist-box .fa-exclamation-circle {
+    .playlist-box .fa-arrow-right {
         margin-right: 10px;
         margin-top: 22px;
         font-weight: normal;
@@ -348,191 +334,98 @@
 </head>
 <body>
     <section>
-        <!-- user playlists -->
-        <div id='user-playlist' class='music-container-user'>
+        <!-- playlists -->
+        <div id='playlists' class='music-container-user'>
             <div class='music-header'>
-                <div class='title'><h2>My Playlists</h2></div>
+                <div class='title'><h2>Most Recent 20 Generated Playlists</h2></div>
             </div>
             <div class='music-playlist'>
                 <div class='playlist-box'>
-                    {% for playlist_name in playlist_names %}
-                    {% if playlist_tracks[loop.index0]|length > 0 %}
-                        <div class='playlist-info' onclick="toggleTracks('{{'track-playlist'+loop.index|string}}', {{ loop.index0 }}, this)">
-                            <div class='playlist-img'>
-                                <img src="{{playlist_covers[loop.index0]}}">
-                            </div>
-                            <div class='playlist-name'>
-                                <h6>{{playlist_name}}</h6>
-                                <p>{{playlist_descriptions[loop.index0]}}</p>
-                            </div>
-                            <i class="fa fa-circle-o"></i>
-                        </div><hr>
-                        <div class='track-box' id='{{'track-playlist'+loop.index|string}}' style="display:none">
-                            {% for track in playlist_tracks[loop.index0] %}
-                            <p style="margin-left: 20px; margin-right: 20px;"><b>{{loop.index}}. </b>{{track.name}} - <i>{{track.artist}}</i></p>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class='playlist-info'>
-                            <div class='playlist-img'>
-                                <img src="{{playlist_covers[loop.index0]}}">
-                            </div>
-                            <div class='playlist-name'>
-                                <h6>{{playlist_name}}</h6>
-                                <p>{{playlist_descriptions[loop.index0]}}</p>
-                            </div>
-                            <i class="fa fa-exclamation-circle"></i>
-                        </div><hr>
-                    {% endif %}
-                    {% endfor %}
+                    
                 </div>
             </div>
         </div>
         
-        <!-- generated playlist -->
-        {% if gen_track_names|length > 0 %}
-        <div id='generated-playlist' class='music-container-gen'>
+        <!-- tracks -->
+        <div id='tracks' class='music-container-gen'>
             <div class='music-header'>
                 <div class='title'>
-                    <h2>Generated Playlist</h2>
-                    <h4>Inspired by <i>{{pl_name}}</i></h4>
+                    <h2>Tracks</h2>
                 </div>
             </div>
             <div class='music-playlist'>
                 <div class='playlist-box'>
-                    {% for gen_track_name in gen_track_names %}
-                    <div class='playlist-info'>
-                        <div class='playlist-img'>
-                            <img src="{{gen_track_covers[loop.index0]}}">
-                                </div>
-                        <div class='playlist-name'>
-                            <h6>{{gen_track_name}}</h6>
-                            <p>{{gen_track_artists[loop.index0]}}</p>
-                        </div>
-                    </div>
-                    <div class='track-preview'><audio controls style='height: 15px;'><source src="{{gen_track_previews[loop.index0]}}"></audio></div>
-                    <hr>
-                    {% endfor %}
+                    
                 </div>
             </div>
         </div>
         
-        <div class='nav-button' style='position:absolute; bottom:30px; right:30px;'><a href='#' style='color: #fff;'>EXPORT</a></div>
-        {% endif %}
-        
-        <a id='generate-button' class='generate element-hidden' href='#' onclick="generate(this);" disabled>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            GENERATE >>
-        </a>
-        
         <div class='nav-button' style='position:absolute; top:30px; right:30px;'><a href='{{url_for('logout')}}' style='color: #fff;'>LOGOUT</a></div>
-        <div class='nav-button' style='position:absolute; top:30px; left:30px;'><a href='{{url_for('index')}}' style='color: #fff;'>BACK</a></div>
-        <div class='nav-button' style='position:absolute; bottom:30px; left:30px;'><a href='{{url_for('history')}}' style='color: #fff;'>HISTORY</a></div>
+        <div class='nav-button' style='position:absolute; top:30px; left:30px;'><a href='{{url_for('home')}}' style='color: #fff;'>BACK</a></div>
+        <div id='export-button' class='nav-button element-hidden' style='position:absolute; bottom:30px; right:30px;'><a href='#' style='color: #fff;'>EXPORT</a></div>
         
         <div id="avatar"></div>
         
-        <div class="piechart" id="piechart-genre" style="bottom:-10px;"></div>
-        <div class="piechart" id="piechart-artist" style="bottom:150px;"></div>
+        <div class="piechart" id="piechart-genre" style="bottom:40px;"></div>
+        <div class="piechart" id="piechart-artist" style="top:160px;"></div>
     </section>
     
-    <!-- playlist script -->
-    <script>
-        var selectedPlIndex = -1;
-        var plIds = {{ playlist_ids|safe }};
-        
-        function generate(obj) {
-            if (selectedPlIndex >= 0) {
-                obj.href="/home/".concat(plIds[selectedPlIndex].toString());
-            }
-        }
-        
-        function toggleTracks(playlistID, index, obj) {
-            var e = document.getElementById(playlistID);
-            if (e.style.display == "none") {
-                gen_button = document.getElementById("generate-button");
-                try {
-                    gen_button.disabled = false;
-                    gen_button.classList.remove("element-hidden");
-                }
-                catch(err) {
-                    
-                }
-                
-                selectedPlIndex = index;
-                
-                e.style.display = "block";
-                
-                var unchecked = obj.getElementsByClassName("fa fa-circle-o")[0];
-                var checked = document.createElement("i");
-                checked.className = "fa fa-check-circle-o";
-                unchecked.parentNode.replaceChild(checked, unchecked);
-                
-                // collapse and uncheck all other playlists
-                var trackBoxes = obj.parentNode.getElementsByClassName("track-box");
-                var i;
-                for (i = 0; i < trackBoxes.length; i++) {
-                    if (trackBoxes[i].id !== playlistID) {
-                        trackBoxes[i].style.display = "none";
-                    }
-                }
-                var playlists = obj.parentNode.getElementsByClassName("playlist-info");
-                var i;
-                for (i = 0; i < playlists.length; i++) {
-                    if (playlists[i] !== obj) {
-                        if (playlists[i].getElementsByClassName("fa fa-check-circle-o").length !== 0) {
-                            var checked = playlists[i].getElementsByClassName("fa fa-check-circle-o")[0];
-                            var unchecked = document.createElement("i");
-                            unchecked.className = "fa fa-circle-o";
-                            checked.parentNode.replaceChild(unchecked, checked);
-                        }
-                    }
-                }
-            }
-            else {
-                gen_button = document.getElementById("generate-button");
-                try {
-                    gen_button.disabled = true;
-                    gen_button.classList.add("element-hidden");
-                }
-                catch(err) {
-                    
-                }
-                
-                selectedPlIndex = -1;
-                
-                e.style.display = "none";
-                
-                var checked = obj.getElementsByClassName("fa fa-check-circle-o")[0];
-                var unchecked = document.createElement("i");
-                unchecked.className = "fa fa-circle-o";
-                checked.parentNode.replaceChild(unchecked, checked);
-            }
-        }
-    </script>
-    
-    <!-- pie chart script -->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
+    <script>
+        var playlists = {{ playlists|safe }};
+        
+        var e = document.getElementById("playlists").getElementsByClassName("music-playlist")[0].getElementsByClassName("playlist-box")[0];
+        
+        e.innerHTML = "";
+        
+        var i;
+        for (i = 0; i < playlists.length; i++) {
+            e.innerHTML += "<div class='playlist-info' onclick='showTracks(" + i.toString() + ", this); drawChart(" + i.toString() + ", this);'><div class='playlist-name'><h6>"
+            + playlists[i]['created_on_by'] + "</h6><p>Inspired by <b>" + playlists[i]['inspired_by'] + "</b></p></div><i class='fa fa-arrow-right'></i></div><hr>";
+        }
+        
+        function showTracks(index, obj) {
+            try {
+                document.getElementById("export-button").classList.remove("element-hidden");
+            }
+            catch(err) {
+                
+            }
+            
+            var e = document.getElementById("tracks").getElementsByClassName("music-playlist")[0].getElementsByClassName("playlist-box")[0];
+            
+            e.innerHTML = "";
+            
+            var i;
+            for (i = 0; i < playlists[index]["track_names"].length; i++) {
+                e.innerHTML += "<div class='playlist-info'><div class='playlist-img'><img src=" + playlists[index]['track_covers'][i]
+                    + "></div><div class='playlist-name'><h6>" + playlists[index]['track_names'][i] + "</h6><p>"
+                    + playlists[index]['track_artists'][i] + "</p></div></div><div class='track-preview'><audio controls style='height: 15px;'><source src="
+                    + playlists[index]['track_previews'][i] + "></audio></div><hr>";
+            }
+            
+            p = obj.parentNode.getElementsByClassName("playlist-info");
+            for (i = 0; i < p.length; i++) {
+                p[i].getElementsByClassName("fa fa-arrow-right")[0].style.color = "#000";
+            }
+            obj.getElementsByClassName("fa fa-arrow-right")[0].style.color = "#00ff00";
+        }
+    
         google.charts.load('current', {'packages':['corechart']});
         google.charts.setOnLoadCallback(drawChart);
         
-        function drawChart() {
-            if ({{ gen_genres|safe }}.length == 0 || {{ gen_artists|safe }}.length == 0) {
-                return;
-            }
+        function drawChart(index, obj) {
+            var gen_genres = playlists[index]["genres"];
+            var gen_artists = playlists[index]["artist_names"];
             
             var genres = [['Genre', 'Number of Tracks']];
-            var i;
-            for (i = 0; i < {{ gen_genres|safe }}.length; i++) {
-                genres.push([{{ gen_genres|safe }}[i][0], {{ gen_genres|safe }}[i][1]]);
+            for (var key in gen_genres){
+                genres.push([key, gen_genres[key]]);
             }
             
             var artists = [['Artist', 'Number of Tracks']];
-            for (i = 0; i < {{ gen_artists|safe }}.length; i++) {
-                artists.push([{{ gen_artists|safe }}[i][0], {{ gen_artists|safe }}[i][1]]);
+            for (var key in gen_artists){
+                artists.push([key, gen_artists[key]]);
             }
             
             try {
@@ -554,6 +447,9 @@
                 alert(err.message);
             }
         }
+    </script>
+    
+
     </script>
 </body>
 </html>

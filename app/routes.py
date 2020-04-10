@@ -12,6 +12,13 @@ from pprint import pprint
 import requests
 import boto3
 from datetime import datetime
+import decimal
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return int(o)
+        return super(DecimalEncoder, self).default(o)
 
 webapp = Flask(__name__, static_url_path = '/static', static_folder = 'static')
 webapp.config['FLASKS3_BUCKET_NAME'] = S3_BUCKET
@@ -39,6 +46,7 @@ gen_track_artists = []
 gen_track_covers = []
 gen_track_previews = []
 
+# useless index page
 @webapp.route('/')
 @webapp.route('/index')
 def index():
@@ -67,6 +75,7 @@ def index():
                                app_js_url=app_js_url, logo_url=logo_url, login_url=login_url, particle_shape_url=particle_shape_url,\
                                background_urls=background_urls)
 
+# used by oauth, will redirect to home page if auth succeeds
 @webapp.route('/callback/')
 def callback():
     access_token = ''
@@ -81,6 +90,7 @@ def callback():
     else:
         return redirect(url_for('index'))
 
+# home page showing user playlists and generated playlist
 @webapp.route('/home')
 def home():
     # check if app is authorized by looking for cached token
@@ -254,6 +264,7 @@ def home():
                            gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
                            gen_genres=json.dumps(gen_art_genres), pl_name=pl_name)
 
+# logout current user, back to index
 @webapp.route('/logout')
 def logout():
     # delete cached token
@@ -301,6 +312,7 @@ def logout():
     
     return redirect(url_for('index'))
 
+# generate new playlist based on selected user playlist
 @webapp.route('/home/<id>')
 def generate(id):
     access_token = ''
@@ -413,9 +425,11 @@ def generate(id):
 
     # save generated playlist to dynamodb
     dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table('mugic_playlist')
+    table = dynamodb.Table(DYNAMO_PLAYLIST_TABLE_NAME)
+    uid = sp.me()['id']
+    pid = datetime.now().strftime('%Y-%m-%d %H:%M:%S')+' by '+uid
     table.put_item(Item={
-                      'created_on_by': datetime.now().strftime('%Y-%m-%d %H:%M:%S')+' by '+sp.me()['id'],
+                      'created_on_by': pid,
                       'inspired_by': pl_name,
                       'track_names': gen_track_names,
                       'track_artists': gen_track_artists,
@@ -424,16 +438,25 @@ def generate(id):
                       'artist_names': gen_art_names_dict,
                       'genres': gen_art_genres_dict
                       })
-    '''dynamodb.put_item(TableName='mugic_playlist', Item={
-                             'created_on_by':{'S':datetime.now().strftime('%Y-%m-%d %H:%M:%S')+' by '+sp.me()['id']},
-                             'inspired_by':{'S':pl_name},
-                             'track_names':{"L":gen_track_names},
-                             'track_artists':{"L":gen_track_artists},
-                             'track_covers':{"L":gen_track_covers},
-                             'track_previews':{"L":gen_track_previews},
-                             'artist_names':{"M":gen_art_names_dict},
-                             'genres':{"M":gen_art_genres_dict},
-                             })'''
+
+    table = dynamodb.Table(DYNAMO_USER_TABLE_NAME)
+    response = table.get_item(Key={'id':uid})
+    # put new user to dynamodb
+    if 'Item' not in response:
+        table.put_item(Item={
+                       'id': uid,
+                       'playlist_ids': [pid]
+                       })
+    else:
+        table.update_item(
+                            Key={
+                            'id': uid
+                            },
+                            UpdateExpression='SET playlist_ids = list_append(playlist_ids, :i)',
+                            ExpressionAttributeValues={
+                            ':i': [pid]
+                            }
+                            )
 
     return render_template('home.html', playlist_names=pl_names, playlist_descriptions=pl_descriptions,\
                            playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts, user_avator=user_avator,\
@@ -441,8 +464,43 @@ def generate(id):
                            gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
                            gen_genres=json.dumps(gen_art_genres), pl_name=pl_name)
 
+# previuosly generated playlists
+@webapp.route('/history')
+def history():
+    access_token = ''
+    token_info = sp_oauth.get_cached_token()
+    if token_info:
+        access_token = token_info['access_token']
+    
+    if not access_token:
+        redirect(url_for('index'))
 
+    sp = spotipy.Spotify(access_token)
+    uid = sp.me()['id']
 
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(DYNAMO_USER_TABLE_NAME)
+    response = table.get_item(Key={'id':uid})
+    # put new user to dynamodb
+    if 'Item' not in response:
+        table.put_item(Item={
+                       'id': uid,
+                       'playlist_ids': ['placeholder']
+                       })
+        return 'No history'
+    else:
+        playlists = response['Item']['playlist_ids']
+        table = dynamodb.Table(DYNAMO_PLAYLIST_TABLE_NAME)
+        info = []
+        for playlist in playlists:
+            try:
+                info.append(table.get_item(Key={'created_on_by':playlist})['Item'])
+            except:
+                pass
+        info = sorted(info, key=lambda kv: kv['created_on_by'], reverse=True)
+        info = info[0:min(20, len(info))]
+        print (json.dumps(info, cls=DecimalEncoder, indent=2))
+        return render_template('history.html', playlists=json.dumps(info, cls=DecimalEncoder), user_avator=user_avator)
 
 
 
