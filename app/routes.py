@@ -24,7 +24,9 @@ webapp = Flask(__name__, static_url_path = '/static', static_folder = 'static')
 webapp.config['FLASKS3_BUCKET_NAME'] = S3_BUCKET
 s3 = FlaskS3(webapp)
 
+# oauth
 sp_oauth = oauth2.SpotifyOAuth(SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE, cache_path=CACHE)
+token = {}
 
 # for home page user playlists
 pl_names = []
@@ -50,10 +52,15 @@ gen_track_previews = []
 @webapp.route('/')
 @webapp.route('/index')
 def index():
-    access_token = ''
+    '''access_token = ''
     token_info = sp_oauth.get_cached_token()
     if token_info:
-        access_token = token_info['access_token']
+        access_token = token_info['access_token']'''
+    access_token = ''
+    try:
+        access_token = token['access_token']
+    except:
+        pass
     
     # s3 file urls
     css_url = S3_URL_PREFIX+'/static/css/style.css'
@@ -84,6 +91,8 @@ def callback():
     if code:
         token_info = sp_oauth.get_access_token(code)
         access_token = token_info['access_token']
+        global token
+        token = token_info
 
     if access_token:
         return redirect(url_for('home'))
@@ -94,10 +103,15 @@ def callback():
 @webapp.route('/home')
 def home():
     # check if app is authorized by looking for cached token
-    access_token = ''
+    '''access_token = ''
     token_info = sp_oauth.get_cached_token()
     if token_info:
-        access_token = token_info['access_token']
+        access_token = token_info['access_token']'''
+    access_token = ''
+    try:
+        access_token = token['access_token']
+    except:
+        pass
     
     if not access_token:
         return redirect(url_for('index'))
@@ -268,7 +282,9 @@ def home():
 @webapp.route('/logout')
 def logout():
     # delete cached token
-    os.remove(sp_oauth.cache_path)
+    global token
+    token = {}
+    #os.remove(sp_oauth.cache_path)
     '''f = open(sp_oauth.cache_path, "w")
     f.write("{\"a\":\"b\"}")
     f.close()'''
@@ -313,12 +329,17 @@ def logout():
     return redirect(url_for('index'))
 
 # generate new playlist based on selected user playlist
-@webapp.route('/home/<id>')
+@webapp.route('/generation/<id>')
 def generate(id):
-    access_token = ''
+    '''access_token = ''
     token_info = sp_oauth.get_cached_token()
     if token_info:
-        access_token = token_info['access_token']
+        access_token = token_info['access_token']'''
+    access_token = ''
+    try:
+        access_token = token['access_token']
+    except:
+        pass
 
     if not access_token:
         redirect(url_for('index'))
@@ -467,10 +488,15 @@ def generate(id):
 # previuosly generated playlists
 @webapp.route('/history')
 def history():
-    access_token = ''
+    '''access_token = ''
     token_info = sp_oauth.get_cached_token()
     if token_info:
-        access_token = token_info['access_token']
+        access_token = token_info['access_token']'''
+    access_token = ''
+    try:
+        access_token = token['access_token']
+    except:
+        pass
     
     if not access_token:
         redirect(url_for('index'))
@@ -499,7 +525,6 @@ def history():
                 pass
         info = sorted(info, key=lambda kv: kv['created_on_by'], reverse=True)
         info = info[0:min(20, len(info))]
-        print (json.dumps(info, cls=DecimalEncoder, indent=2))
         return render_template('history.html', playlists=json.dumps(info, cls=DecimalEncoder), user_avator=user_avator)
 
 
