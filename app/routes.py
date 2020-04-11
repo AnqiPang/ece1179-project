@@ -39,6 +39,7 @@ pl_art_ids = []
 pl_track_dicts = []
 user_avator = S3_URL_PREFIX+'/static/img/icon/spotify.png'
 
+
 # for home page generated playlist
 pl_name = ''
 gen_art_names = []
@@ -132,17 +133,28 @@ def home():
     pl_descriptions = []
     pl_track_ids = []
     pl_track_names = []
+    pl_track_pop = []
     pl_art_ids = []
     pl_track_dicts = []
+    user_arts_dict = {}
     user_avator = S3_URL_PREFIX+'/static/img/icon/spotify.png'
 
     sp = spotipy.Spotify(access_token)
     playlists = sp.current_user_playlists()
     print(json.dumps(playlists, indent=2))
 
+    user_id = sp.me()['id']
+    SNS = boto3.client('sns')
+    messsage = SNS.publish(
+        TopicArn='arn:aws:sns:us-east-1:026422498755:UserLogin',
+        Message=str(user_id),
+
+    )
+
     for i, playlist in enumerate(playlists['items']):
         track_names = []
         track_ids = []
+        track_pop = []
         art_names =[]
         art_ids =[]
         current_tracks_list = list()
@@ -161,11 +173,16 @@ def home():
 
         for i, item in enumerate(tracks['items']):
             track = item['track']
+            popularity = track['popularity']
             track_names.append(track['name'])
             track_ids.append(track['id'])
+            track_pop.append(popularity)
             art_names = art_names + [d['name'] for d in track['artists']]
             art_ids = art_ids + [d['id'] for d in track['artists']]
             current_artist = [d['name'] for d in track['artists']]
+            current_artist_ids = [d['id'] for d in track['artists']]
+            for art_id in current_artist_ids:
+                user_arts_dict[art_id] = user_arts_dict.get(art_id, 0) + 1
             current_tracks_list = current_tracks_list + [{'name': track['name'], 'artist': ', '.join([str(elem) for elem in current_artist])} ]
             print(
                 (i, track['artists'][0]['name'], track['name']))
@@ -179,11 +196,16 @@ def home():
 
             for i, item in enumerate(tracks['items']):
                 track = item['track']
+                popularity = track['popularity']
                 track_names.append(track['name'])
                 track_ids.append(track['id'])
+                track_pop.append(popularity)
                 art_names = art_names + [d['name'] for d in track['artists']]
                 art_ids = art_ids + [d['id'] for d in track['artists']]
                 current_artist = [d['name'] for d in track['artists']]
+                current_artist_ids = [d['id'] for d in track['artists']]
+                for art_id in current_artist_ids:
+                    user_arts_dict[art_id] = user_arts_dict.get(art_id, 0) + 1
                 current_tracks_list = current_tracks_list + [{'name': track['name'], 'artist': ', '.join([str(elem) for elem in current_artist])}]
                 print(
                     i, [d['name'] for d in track['artists']], track['name'])
@@ -192,9 +214,19 @@ def home():
         pl_track_names.append(track_names)
         pl_track_ids.append(track_ids)
         pl_art_ids.append(art_ids)
+        pl_track_pop.append(track_pop)
         #pl_art_names.append(art_names)
         pl_track_dicts.append(current_tracks_list)
         print("current_tracks_list:", current_tracks_list)
+
+    user_genre_list = []
+    flat_art_ids = [item for sublist in pl_art_ids for item in sublist]
+    batched_art_ids = [flat_art_ids[i:i + 50] for i in range(0, len(flat_art_ids), 50)]
+    for item in batched_art_ids:
+        genres = sp.artists(item)['artists']
+        for genre in genres:
+            user_genre_list = user_genre_list + genre['genres']
+
     print(pl_names)
     print(pl_image_urls)
     print(pl_ids)
@@ -206,7 +238,19 @@ def home():
     #print("pl_art_names: ", pl_art_names)
     print("pl_art_ids: ", pl_art_ids)
     print("num of artists: ", len(pl_art_ids[1]))
+    print("user_art_dict: ", user_arts_dict)
+    print("user_genre_list: ", user_genre_list)
 
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('user_all_playlists')
+    table.put_item(Item={
+        'user_id': sp.me()['id'],
+        'user_track_ids': pl_track_ids,
+        'user_track_names': pl_track_names,
+        'user_artist_ids': pl_art_ids,
+        'user_artist_dict':user_arts_dict,
+        'user_genre_list': user_genre_list
+    })
 
     """
     for pl_id in pl_ids:
