@@ -369,10 +369,10 @@
     .ex-window-closebutton{
         width: 16px;height: 16px;display: block;
         position: absolute;top: 12px;right: 20px;
-        background: url(../static/img/close_def.png) no-repeat;cursor: pointer;
+        background: url('{{close_def}}') no-repeat;cursor: pointer;
     }
 
-    .ex-window-closebutton:hover{background:url(../static/img/close_hov.png);}
+    .ex-window-closebutton:hover{background:url('{{close_hov}}');}
 
     .ex-window-content{
         padding: 15px 20px;
@@ -398,7 +398,7 @@
     }
 
     .ex-window-input-playlistname{
-        background: url(../static/img/playlist.png) no-repeat 2px ;
+        background: url('{{playlist_icon}}') no-repeat 2px ;
     }
 
     .ex-window-submit{
@@ -494,7 +494,8 @@
                 </div>
             </div>
         </div>
-        
+
+        <!-- Export Playlist -->
         <div class='nav-button' style='position:absolute; bottom:30px; right:30px;'>
             <a href='javascript:showEXWindow()' style='color: #fff;'>EXPORT</a>
         </div>
@@ -507,21 +508,22 @@
                 <a class='ex-window-closebutton' href='javascript:hideWindow();'></a>
             </div>
 
-            <div class='ex-window-content'>
-                <div class='ex-window-140 ex-window-pt15'>
-                    <input class='ex-window-input ex-window-input-playlistname' type='input' placeholder='New Playlist Name' value=''>
+            <form action='/export' method="POST">
+                <div class='ex-window-content'>
+                    <div class='ex-window-140 ex-window-pt15'>
+                        <input class='ex-window-input ex-window-input-playlistname' type='text' placeholder='New Playlist Name' value='' name='plName'>
+                    </div>
+				    <div class='ex-window-msg'>
+                        <p>
+                            {{Msg}}
+                        </p>
+				    </div>
+                    <div>
+                        <input class='ex-window-submit'  type='submit' value='Creat & Export Playlist' >
+                    </div>
                 </div>
-				<div class='ex-window-msg'>
-					<p>
-						
-					</p>
-				</div>
-                <div>
-                    <a class='ex-window-submit' href='#'>
-                        Creat & Export Playlist
-                    </a>
-                </div>
-            </div>
+            </form>
+
         </div>
 
         {% endif %}
@@ -622,7 +624,7 @@
 	<!-- Export window script -->
 	<script type='text/javascript'>
 		
-		var winInstace , onMoveStartId , mousePos = {x:0,y:0};
+		var winInstance , onMoveStartId , mousePos = {x:0,y:0};
 		
 		function g(id){return document.getElementById(id);}
 		
@@ -656,7 +658,7 @@
 		
 				var e = e || window.event;
 		
-				dialogInstace = instace;
+				winInstance = instace;
 				instace.mouseOffsetLeft = e.pageX - instace.moveElement.offsetLeft ;
 				instace.mouseOffsetTop  = e.pageY - instace.moveElement.offsetTop ;
 				
@@ -669,7 +671,7 @@
 		}
 		
 		document.onmouseup = function(e){
-			dialogInstace = false;
+			winInstance = false;
 			clearInterval(onMoveStartId);
 		}
 		document.onmousemove = function( e ){
@@ -687,7 +689,7 @@
 		
 		function onMoveStart(){
 		
-			var instace = dialogInstace;
+			var instace = winInstance;
 		    if (instace) {
 		    	var maxX = document.documentElement.clientWidth -  instace.moveElement.offsetWidth;
 		    	var maxY = document.documentElement.clientHeight - instace.moveElement.offsetHeight ;
