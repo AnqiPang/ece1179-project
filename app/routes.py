@@ -26,7 +26,7 @@ s3 = FlaskS3(webapp)
 
 # oauth
 sp_oauth = oauth2.SpotifyOAuth(SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE, cache_path=CACHE)
-token = {}
+sp_token = {}
 
 # for home page user playlists
 pl_names = []
@@ -59,7 +59,7 @@ def index():
         access_token = token_info['access_token']'''
     access_token = ''
     try:
-        access_token = token['access_token']
+        access_token = sp_token['access_token']
     except:
         pass
     
@@ -90,10 +90,10 @@ def callback():
     url = request.url
     code = sp_oauth.parse_response_code(url)
     if code:
-        token_info = sp_oauth.get_access_token(code)
+        token_info = sp_oauth.get_access_token(code, check_cache=False)
         access_token = token_info['access_token']
-        global token
-        token = token_info
+        global sp_token
+        sp_token = token_info
 
     if access_token:
         return redirect(url_for('home'))
@@ -108,13 +108,24 @@ def home():
     token_info = sp_oauth.get_cached_token()
     if token_info:
         access_token = token_info['access_token']'''
+    global sp_token
+    
     access_token = ''
     try:
-        access_token = token['access_token']
+        access_token = sp_token['access_token']
     except:
         pass
     
     if not access_token:
+        return redirect(url_for('index'))
+
+    # test if token valid
+    # if not, clear token and ask for authorization
+    try:
+        sp = spotipy.Spotify(access_token)
+        playlists = sp.current_user_playlists()
+    except:
+        sp_token = {}
         return redirect(url_for('index'))
 
     global pl_names
@@ -141,7 +152,6 @@ def home():
 
     sp = spotipy.Spotify(access_token)
     playlists = sp.current_user_playlists()
-    print(json.dumps(playlists, indent=2))
 
     user_id = sp.me()['id']
     SNS = boto3.client('sns')
@@ -158,7 +168,6 @@ def home():
         art_names =[]
         art_ids =[]
         current_tracks_list = list()
-        print("%d %s" % (i, playlist['name']))
         pl_names.append(playlist['name'])
         if len(playlist['images']) != 0:
             pl_image_urls.append(playlist['images'][0]['url'])
@@ -167,9 +176,7 @@ def home():
         pl_ids.append(playlist['id'])
         pl_descriptions.append(playlist['description'])
         results = sp.playlist(playlist['id'], fields= "tracks,next")
-        print("results:", json.dumps(results, indent=2))
         tracks = results['tracks']
-        print("tracks:", json.dumps(tracks, indent=2))
 
         for i, item in enumerate(tracks['items']):
             track = item['track']
@@ -184,8 +191,6 @@ def home():
             for art_id in current_artist_ids:
                 user_arts_dict[art_id] = user_arts_dict.get(art_id, 0) + 1
             current_tracks_list = current_tracks_list + [{'name': track['name'], 'artist': ', '.join([str(elem) for elem in current_artist])} ]
-            print(
-                (i, track['artists'][0]['name'], track['name']))
         #art_names = art_names + [d['name'] for d in track['artists']]
         #art_ids = art_ids + [d['id'] for d in track['artists']]
 
@@ -207,8 +212,6 @@ def home():
                 for art_id in current_artist_ids:
                     user_arts_dict[art_id] = user_arts_dict.get(art_id, 0) + 1
                 current_tracks_list = current_tracks_list + [{'name': track['name'], 'artist': ', '.join([str(elem) for elem in current_artist])}]
-                print(
-                    i, [d['name'] for d in track['artists']], track['name'])
 
 
         pl_track_names.append(track_names)
@@ -217,7 +220,6 @@ def home():
         pl_track_pop.append(track_pop)
         #pl_art_names.append(art_names)
         pl_track_dicts.append(current_tracks_list)
-        print("current_tracks_list:", current_tracks_list)
 
     user_genre_list = []
     flat_art_ids = [item for sublist in pl_art_ids for item in sublist]
@@ -226,20 +228,6 @@ def home():
         genres = sp.artists(item)['artists']
         for genre in genres:
             user_genre_list = user_genre_list + genre['genres']
-
-    print(pl_names)
-    print(pl_image_urls)
-    print(pl_ids)
-    print(pl_descriptions)
-    print("pl_track_dicts[0]:", pl_track_dicts[0])
-
-    print("pl_track_names: ", pl_track_names)
-    print("pl_track_ids: ", pl_track_ids)
-    #print("pl_art_names: ", pl_art_names)
-    print("pl_art_ids: ", pl_art_ids)
-    print("num of artists: ", len(pl_art_ids[1]))
-    print("user_art_dict: ", user_arts_dict)
-    print("user_genre_list: ", user_genre_list)
 
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table('user_all_playlists')
@@ -307,10 +295,6 @@ def home():
         pl_art_ids.append(art_ids)
     """
 
-
-    print("playlist track names: ", pl_track_names)
-    #print("playlist artisit names: ", pl_art_names)
-
     if len(sp.me()['images']) != 0:
         user_avator = sp.me()['images'][0]['url']
     else:
@@ -326,8 +310,8 @@ def home():
 @webapp.route('/logout')
 def logout():
     # delete cached token
-    global token
-    token = {}
+    global sp_token
+    sp_token = {}
     #os.remove(sp_oauth.cache_path)
     '''f = open(sp_oauth.cache_path, "w")
     f.write("{\"a\":\"b\"}")
@@ -379,14 +363,25 @@ def generate(id):
     token_info = sp_oauth.get_cached_token()
     if token_info:
         access_token = token_info['access_token']'''
+    global sp_token
+        
     access_token = ''
     try:
-        access_token = token['access_token']
+        access_token = sp_token['access_token']
     except:
         pass
 
     if not access_token:
         redirect(url_for('index'))
+
+    # test if token valid
+    # if not, clear token and ask for authorization
+    try:
+        sp = spotipy.Spotify(access_token)
+        playlists = sp.current_user_playlists()
+    except:
+        sp_token = {}
+        return redirect(url_for('index'))
 
     global pl_name
     global gen_art_names
@@ -536,14 +531,26 @@ def history():
     token_info = sp_oauth.get_cached_token()
     if token_info:
         access_token = token_info['access_token']'''
+    global sp_token
+    
     access_token = ''
     try:
-        access_token = token['access_token']
+        access_token = sp_token['access_token']
     except:
         pass
     
     if not access_token:
         redirect(url_for('index'))
+
+    # test if token valid
+    # if not, clear token and ask for authorization
+    try:
+        sp = spotipy.Spotify(access_token)
+        playlists = sp.current_user_playlists()
+    except:
+        sp_token = {}
+        return redirect(url_for('index'))
+
 
     sp = spotipy.Spotify(access_token)
     uid = sp.me()['id']
