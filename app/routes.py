@@ -48,6 +48,7 @@ gen_track_names = []
 gen_track_artists = []
 gen_track_covers = []
 gen_track_previews = []
+gen_track_ids = []
 
 # useless index page
 @webapp.route('/')
@@ -422,6 +423,7 @@ def generate(id):
     gen_track_artists = []
     gen_track_covers = []
     gen_track_previews = []
+    gen_track_ids = []
 
     sp = spotipy.Spotify(access_token)
     track_ids = []
@@ -605,7 +607,7 @@ def history():
         info = info[0:min(20, len(info))]
         return render_template('history.html', playlists=json.dumps(info, cls=DecimalEncoder), user_avator=user_avator)
 
-@webapp.route('/export', method=['POST'])
+@webapp.route('/export', methods=['POST'])
 def export():
 
     global sp_token
@@ -633,16 +635,24 @@ def export():
     user_id = sp.me()['id']
 
     for item in enumerate(playlists['items']):
-        if playlistName_new == item['name']:
-            Msg = "Playlist is exist, please change another name"
-        return render_template('home.html', Msg=Msg)
+        if playlistName_new == item[1]['name']:
+            Msg = "The playlist already exists. Please try another name."
+            return render_template('home.html', playlist_names=pl_names, playlist_descriptions=pl_descriptions,\
+                                   playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts, user_avator=user_avator,\
+                                   playlist_ids=json.dumps(pl_ids), gen_track_names=gen_track_names, gen_track_artists=gen_track_artists,\
+                                   gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
+                                   gen_genres=json.dumps(gen_art_genres), pl_name=pl_name, Msg=Msg)
 
     Msg = "Success!"
     sp.user_playlist_create(user_id, playlistName_new)
     playlists = sp.current_user_playlists()
-    playlist_id = next(item['id'] for item in enumerate(playlists['items']) if item['name'] == playlistName_new)
+    playlist_id = next(item[1]['id'] for item in enumerate(playlists['items']) if item[1]['name'] == playlistName_new)
     sp.user_playlist_add_tracks(user_id, playlist_id, gen_track_ids)
 
-    return render_template('home.html', Msg=Msg)
+    return render_template('home.html', playlist_names=pl_names, playlist_descriptions=pl_descriptions,\
+                           playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts, user_avator=user_avator,\
+                           playlist_ids=json.dumps(pl_ids), gen_track_names=gen_track_names, gen_track_artists=gen_track_artists,\
+                           gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
+                           gen_genres=json.dumps(gen_art_genres), pl_name=pl_name, Msg=Msg)
 
 webapp.run()
