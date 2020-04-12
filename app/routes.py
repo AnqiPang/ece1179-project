@@ -154,12 +154,6 @@ def home():
     playlists = sp.current_user_playlists()
 
     user_id = sp.me()['id']
-    SNS = boto3.client('sns')
-    messsage = SNS.publish(
-        TopicArn='arn:aws:sns:us-east-1:026422498755:UserLogin',
-        Message=str(user_id),
-
-    )
 
     for i, playlist in enumerate(playlists['items']):
         track_names = []
