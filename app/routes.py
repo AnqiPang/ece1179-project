@@ -94,6 +94,29 @@ def callback():
         access_token = token_info['access_token']
         global sp_token
         sp_token = token_info
+        
+        dynamodb = boto3.resource('dynamodb')
+        table = dynamodb.Table(DYNAMO_USER_TABLE_NAME)
+        sp = spotipy.Spotify(access_token)
+        uid = sp.me()['id']
+        response = table.get_item(Key={'id':uid})
+        # put new user to dynamodb
+        if 'Item' not in response:
+            table.put_item(Item={
+                           'id': uid,
+                           'playlist_ids': ['placeholder'],
+                           'user_token': sp_token
+                           })
+        else:
+            table.update_item(
+                              Key={
+                              'id': uid
+                              },
+                              UpdateExpression='SET user_token = :i',
+                              ExpressionAttributeValues={
+                              ':i': sp_token
+                              }
+                              )
 
     if access_token:
         return redirect(url_for('home'))
@@ -505,7 +528,8 @@ def generate(id):
     if 'Item' not in response:
         table.put_item(Item={
                        'id': uid,
-                       'playlist_ids': [pid]
+                       'playlist_ids': [pid],
+                       'user_token': sp_token
                        })
     else:
         table.update_item(
@@ -562,7 +586,8 @@ def history():
     if 'Item' not in response:
         table.put_item(Item={
                        'id': uid,
-                       'playlist_ids': ['placeholder']
+                       'playlist_ids': ['placeholder'],
+                       'user_token': sp_token
                        })
         return 'No history'
     else:
