@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 import sys
 import spotipy
 import spotipy.util as util
@@ -176,9 +176,14 @@ def home():
     pl_track_dicts = []
     user_arts_dict = {}
     user_avator = S3_URL_PREFIX+'/static/img/icon/spotify.png'
-    close_def = S3_URL_PREFIX+'/static/img/icon/close_deg.png'
+    close_def = S3_URL_PREFIX+'/static/img/icon/close_def.png'
     close_hov = S3_URL_PREFIX+'/static/img/icon/close_hov.png'
     playlist_icon = S3_URL_PREFIX+'/static/img/icon/playlist.png'
+
+    print(close_def)
+    print(close_hov)
+    print(playlist_icon)
+    print(user_avator)
 
     sp = spotipy.Spotify(access_token)
     playlists = sp.current_user_playlists()
@@ -328,7 +333,7 @@ def home():
                            playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts, user_avator=user_avator,\
                            playlist_ids=json.dumps(pl_ids), gen_track_names=gen_track_names, gen_track_artists=gen_track_artists,\
                            gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
-                           gen_genres=json.dumps(gen_art_genres), pl_name=pl_name, close_def=close_def, close_hov= close_hov, playlist_icon=playlist_icon)
+                           gen_genres=json.dumps(gen_art_genres), pl_name=pl_name, close_def=close_def, close_hov=close_hov, playlist_icon=playlist_icon)
 
 # logout current user, back to index
 @webapp.route('/logout')
@@ -424,6 +429,10 @@ def generate(id):
     gen_track_covers = []
     gen_track_previews = []
     gen_track_ids = []
+
+    close_def = S3_URL_PREFIX+'/static/img/icon/close_def.png'
+    close_hov = S3_URL_PREFIX+'/static/img/icon/close_hov.png'
+    playlist_icon = S3_URL_PREFIX+'/static/img/icon/playlist.png'
 
     sp = spotipy.Spotify(access_token)
     track_ids = []
@@ -550,7 +559,7 @@ def generate(id):
                            playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts, user_avator=user_avator,\
                            playlist_ids=json.dumps(pl_ids), gen_track_names=gen_track_names, gen_track_artists=gen_track_artists,\
                            gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
-                           gen_genres=json.dumps(gen_art_genres), pl_name=pl_name)
+                           gen_genres=json.dumps(gen_art_genres), pl_name=pl_name, close_def=close_def, close_hov=close_hov, playlist_icon = playlist_icon)
 
 # previuosly generated playlists
 @webapp.route('/history')
@@ -634,16 +643,20 @@ def export():
 
     user_id = sp.me()['id']
 
+    Msg = None
+
     for item in enumerate(playlists['items']):
         if playlistName_new == item[1]['name']:
             Msg = "The playlist already exists. Please try another name."
+            #flash(Msg)
+            print(Msg)
+
             return render_template('home.html', playlist_names=pl_names, playlist_descriptions=pl_descriptions,\
                                    playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts, user_avator=user_avator,\
                                    playlist_ids=json.dumps(pl_ids), gen_track_names=gen_track_names, gen_track_artists=gen_track_artists,\
                                    gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
                                    gen_genres=json.dumps(gen_art_genres), pl_name=pl_name, Msg=Msg)
 
-    Msg = "Success!"
     sp.user_playlist_create(user_id, playlistName_new)
     playlists = sp.current_user_playlists()
     playlist_id = next(item[1]['id'] for item in enumerate(playlists['items']) if item[1]['name'] == playlistName_new)
