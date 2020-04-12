@@ -646,28 +646,28 @@
 		
 		function Window( dragId , moveId ){
 		
-			var instace = {} ;
+			var instance = {} ;
 		
-			instace.dragElement  = g(dragId);
-			instace.moveElement  = g(moveId);
+			instance.dragElement  = g(dragId);
+			instance.moveElement  = g(moveId);
 		
-			instace.mouseOffsetLeft = 0;
-			instace.mouseOffsetTop = 0;	
+			instance.mouseOffsetLeft = 0;
+			instance.mouseOffsetTop = 0;
 	
-			instace.dragElement.addEventListener('mousedown',function(e){
+			instance.dragElement.addEventListener('mousedown',function(e){
 		
 				var e = e || window.event;
 		
-				winInstance = instace;
-				instace.mouseOffsetLeft = e.pageX - instace.moveElement.offsetLeft ;
-				instace.mouseOffsetTop  = e.pageY - instace.moveElement.offsetTop ;
+				winInstance = instance;
+				instance.mouseOffsetLeft = e.pageX - instance.moveElement.offsetLeft ;
+				instance.mouseOffsetTop  = e.pageY - instance.moveElement.offsetTop ;
 				
 				onMoveStartId = setInterval(onMoveStart,10);
 				return false;
-				// instace.moveElement.style.zIndex = zIndex ++;
+				// instance.moveElement.style.zIndex = zIndex ++;
 			})
 		
-			return instace;
+			return instance;
 		}
 		
 		document.onmouseup = function(e){
@@ -689,13 +689,13 @@
 		
 		function onMoveStart(){
 		
-			var instace = winInstance;
-		    if (instace) {
-		    	var maxX = document.documentElement.clientWidth -  instace.moveElement.offsetWidth;
-		    	var maxY = document.documentElement.clientHeight - instace.moveElement.offsetHeight ;
+			var instance = winInstance;
+		    if (instance) {
+		    	var maxX = document.documentElement.clientWidth -  instance.moveElement.offsetWidth;
+		    	var maxY = document.documentElement.clientHeight - instance.moveElement.offsetHeight ;
 		
-				instace.moveElement.style.left = Math.min( Math.max( ( mousePos.x - instace.mouseOffsetLeft) , 0 ) , maxX) + "px";
-				instace.moveElement.style.top  = Math.min( Math.max( ( mousePos.y - instace.mouseOffsetTop ) , 0 ) , maxY) + "px";
+				instance.moveElement.style.left = Math.min( Math.max( ( mousePos.x - instance.mouseOffsetLeft) , 0 ) , maxX) + "px";
+				instance.moveElement.style.top  = Math.min( Math.max( ( mousePos.y - instance.mouseOffsetTop ) , 0 ) , maxY) + "px";
 		    }
 		}
 		
@@ -715,7 +715,7 @@
 		
 		Window('winDrag','winMove');
 		
-		showDialog();
+		showExWindow();
 	</script>
     
     <!-- pie chart script -->
