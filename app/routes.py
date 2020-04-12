@@ -180,11 +180,6 @@ def home():
     close_hov = S3_URL_PREFIX+'/static/img/icon/close_hov.png'
     playlist_icon = S3_URL_PREFIX+'/static/img/icon/playlist.png'
 
-    print(close_def)
-    print(close_hov)
-    print(playlist_icon)
-    print(user_avator)
-
     sp = spotipy.Spotify(access_token)
     playlists = sp.current_user_playlists()
 
