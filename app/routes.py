@@ -249,7 +249,7 @@ def home():
         pl_track_pop.append(track_pop)
         #pl_art_names.append(art_names)
         pl_track_dicts.append(current_tracks_list)
-
+    """
     user_genre_list = []
     flat_art_ids = [item for sublist in pl_art_ids for item in sublist]
     batched_art_ids = [flat_art_ids[i:i + 50] for i in range(0, len(flat_art_ids), 50)]
@@ -268,61 +268,8 @@ def home():
         'user_artist_dict':user_arts_dict,
         'user_genre_list': user_genre_list
     })
-
-    """
-    for pl_id in pl_ids:
-        track_names = []
-        track_ids = []
-        art_ids = []
-        art_names = []
-        # sp = spotipy.Spotify(client_credentials_manager=oauth2.SpotifyClientCredentials)
-        offset = 0
-        while True:
-            response = sp.playlist_tracks(pl_id,
-                                          offset=offset,
-                                          fields='items.track.id,items.track.name,total')
-            pprint(response)
-            print("items ", response['items'])
-
-            offset = offset + len(response['items'])
-            for item in response['items']:
-                track_names.append(item['track']['name'])
-                track_ids.append(item['track']['id'])
-                track_uri = 'spotify:track:' + str(item['track']['id'])
-                track = sp.track(track_uri)
-                for d in track['artists']:
-                    art_names.append(d['name'])
-                    art_ids.append(d['id'])
-            if len(response['items'])==0:
-                break
-            print(offset, "/", response['total'])
     """
 
-
-    """    
-            track_names = track_names + [d['track']['name'] for d in response['items']]
-            track_ids = track_ids + [d['track']['id'] for d in response['items']]
-            print(offset, "/", response['total'])
-
-            if len(response['items']) == 0:
-                break
-        #pl_track_ids.append(track_ids)
-        art_names = []
-        art_ids = []
-        for track in track_ids:
-            # urn = 'spotify:track:6TqXcAFInzjp0bODyvrWEq'
-            uri = 'spotify:track:' + str(track)
-            track = sp.track(uri)
-            # art_name = track['album']['artists'][0]['name']
-            art_names = art_names + [d['name'] for d in track['artists']]
-            art_ids = art_ids + [d['id'] for d in track['artists']]
-    """
-    """
-        pl_track_ids.append(track_ids)
-        pl_track_names.append(track_names)
-        pl_art_names.append(art_names)
-        pl_art_ids.append(art_ids)
-    """
 
     if len(sp.me()['images']) != 0:
         user_avator = sp.me()['images'][0]['url']
