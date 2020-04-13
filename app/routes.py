@@ -13,6 +13,8 @@ import requests
 import boto3
 from datetime import datetime
 import decimal
+from flask_cors import CORS
+
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
@@ -23,6 +25,7 @@ class DecimalEncoder(json.JSONEncoder):
 webapp = Flask(__name__, static_url_path = '/static', static_folder = 'static')
 webapp.config['FLASKS3_BUCKET_NAME'] = S3_BUCKET
 s3 = FlaskS3(webapp)
+CORS(webapp, resources=r'/*')
 
 # oauth
 sp_oauth = oauth2.SpotifyOAuth(SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE, cache_path=CACHE)
@@ -185,6 +188,19 @@ def home():
 
     user_id = sp.me()['id']
 
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(DYNAMO_USER_TABLE_NAME)
+    sp = spotipy.Spotify(access_token)
+    uid = sp.me()['id']
+    response = table.get_item(Key={'id': uid},
+                              AttributesToGet=[
+                                  'recommendation',
+                              ]
+    )
+    print("recommendation", response)
+    recommendation = response['Item']['recommendation']
+    print(recommendation)
+
     for i, playlist in enumerate(playlists['items']):
         track_names = []
         track_ids = []
@@ -275,7 +291,8 @@ def home():
                            playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts, user_avator=user_avator,\
                            playlist_ids=json.dumps(pl_ids), gen_track_names=gen_track_names, gen_track_artists=gen_track_artists,\
                            gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
-                           gen_genres=json.dumps(gen_art_genres), pl_name=pl_name, close_def=close_def, close_hov= close_hov, playlist_icon=playlist_icon)
+                           gen_genres=json.dumps(gen_art_genres), pl_name=pl_name, close_def=close_def, close_hov= close_hov, playlist_icon=playlist_icon,\
+                           recommendation = recommendation)
 
 # logout current user, back to index
 @webapp.route('/logout')
@@ -601,5 +618,99 @@ def export():
                            playlist_ids=json.dumps(pl_ids), gen_track_names=gen_track_names, gen_track_artists=gen_track_artists,\
                            gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
                            gen_genres=json.dumps(gen_art_genres), pl_name=pl_name, Msg=Msg)
+
+
+
+@webapp.route('/toggle', methods=['GET','POST'])
+def toggle():
+    toggle_value = request.get_json()
+    print("1111")
+    print(request.values['toggle_value'])
+    toggle_value_bool =request.values['toggle_value']
+
+    global sp_token
+
+    access_token = ''
+    try:
+        access_token = sp_token['access_token']
+    except:
+        pass
+
+    if not access_token:
+        redirect(url_for('index'))
+
+    # test if token valid
+    # if not, clear token and ask for authorization
+    try:
+        sp = spotipy.Spotify(access_token)
+        playlists = sp.current_user_playlists()
+    except:
+        sp_token = {}
+        return redirect(url_for('index'))
+
+    sp = spotipy.Spotify(access_token)
+    uid = sp.me()['id']
+
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(DYNAMO_USER_TABLE_NAME)
+    sp = spotipy.Spotify(access_token)
+    uid = sp.me()['id']
+    response = table.get_item(Key={'id': uid})
+    print("uid", uid)
+
+
+    table.update_item(
+            Key={
+                'id': uid
+            },
+            UpdateExpression='SET recommendation = :r',
+            ExpressionAttributeValues={
+                ':r': toggle_value_bool
+
+            }
+    )
+
+    print("update")
+    print(toggle_value_bool)
+
+
+    return 'ok'
+
+
+@webapp.route('/read', methods=['GET','POST'])
+def read():
+    global sp_token
+
+    access_token = ''
+    try:
+        access_token = sp_token['access_token']
+    except:
+        pass
+
+    if not access_token:
+        redirect(url_for('index'))
+
+    # test if token valid
+    # if not, clear token and ask for authorization
+    try:
+        sp = spotipy.Spotify(access_token)
+        playlists = sp.current_user_playlists()
+    except:
+        sp_token = {}
+        return redirect(url_for('index'))
+
+    sp = spotipy.Spotify(access_token)
+    uid = sp.me()['id']
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(DYNAMO_USER_TABLE_NAME)
+    sp = spotipy.Spotify(access_token)
+    uid = sp.me()['id']
+    response = table.get_item(Key={'id': uid},
+                              AttributesToGet=[
+                                  'recommendation',
+                              ]
+    )
+    print("uid", uid)
+    print("recomemendation: ",response)
 
 webapp.run()

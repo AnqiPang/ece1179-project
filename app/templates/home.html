@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
     <style>
     /* background */
     * {
@@ -422,9 +423,61 @@
 		color: #d90000;
 	}
 
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      -webkit-transition: .4s;
+      transition: .4s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      -webkit-transition: .4s;
+      transition: .4s;
+    }
+
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+
+    input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+      -webkit-transform: translateX(26px);
+      -ms-transform: translateX(26px);
+      transform: translateX(26px);
+    }
+
     </style>
 </head>
 <body>
+
     <section>
         <!-- user playlists -->
         <div id='user-playlist' class='music-container-user'>
@@ -538,6 +591,19 @@
         
         <div class='nav-button' style='position:absolute; top:30px; right:30px;'><a href='{{url_for('logout')}}' style='color: #fff;'>LOGOUT</a></div>
         <div class='nav-button' style='position:absolute; top:30px; left:30px;'><a href='{{url_for('index')}}' style='color: #fff;'>BACK</a></div>
+        <div>
+    <!--    <label class="switch"  style='position:absolute; top:60px; left:30px;'>
+            <input type="checkbox"id='toggle' value="1" onclick="toggle_fun()">
+            <span class="slider"></span>
+        </label><br><br>  -->
+
+        <label class="switch"  style='position:absolute; top:90px; left:30px;'>
+            <input type="checkbox"id='toggle2' onclick="toggle2_fun()">
+            <span class="slider"></span>
+            <span style='position:absolute;left:80px;'><a style='color: #fff; font-size: 1rem'>Daily Recommendation</a></span>
+        </label><br><br>
+
+        </div>
         <div class='nav-button' style='position:absolute; bottom:30px; left:30px;'><a href='{{url_for('history')}}' style='color: #fff;'>HISTORY</a></div>
         
         <div id="avatar"></div>
@@ -620,7 +686,76 @@
             }
         }
     </script>
-	
+
+<!--    <script type="text/javascript">
+    function toggle_fun(){
+
+        if(document.getElementById("toggle").value=="1"){
+            alert("1111")
+            document.getElementById("toggle").value="0"
+        }
+
+        else if(document.getElementById("toggle").value=="0"){
+           document.getElementById("toggle").value="1"
+        }
+
+        alert(document.getElementById("toggle").value)
+        var button_value = document.getElementById("toggle").value
+
+
+
+        $.ajax({
+            url:'http://127.0.0.1:5000/toggle',
+            type:'POST',
+            data: {
+                toggle_value: button_value
+            },
+            success:function(response){
+                alert("success")
+            }
+        }
+
+        )
+
+    }
+    </script>-->
+
+    <script type="text/javascript">
+    function toggle2_fun(){
+
+
+        alert(document.getElementById("toggle2").checked)
+        var checked_value = document.getElementById("toggle2").checked
+
+
+
+        $.ajax({
+            url:'http://127.0.0.1:5000/toggle',
+            type:'POST',
+            data: {
+                toggle_value: checked_value
+            },
+            success:function(response){
+
+            }
+        }
+
+        )
+
+    }
+    </script>
+    <script type="text/javascript">
+    check();
+    function check() {
+        if({{recommendation}}==false){
+            document.getElementById("toggle2").checked = false;
+            }
+        else if({{recommendation}}==true){
+            document.getElementById("toggle2").checked = true;
+        }
+    }
+
+	</script>
 	<!-- Export window script -->
 	<script type='text/javascript'>
 		
