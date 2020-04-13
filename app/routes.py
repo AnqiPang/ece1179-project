@@ -198,7 +198,11 @@ def home():
                               ]
     )
     print("recommendation", response)
-    recommendation = response['Item']['recommendation']
+    try:
+        recommendation = response['Item']['recommendation']
+    except:
+        recommendation = 'false'
+
     print(recommendation)
 
     for i, playlist in enumerate(playlists['items']):
