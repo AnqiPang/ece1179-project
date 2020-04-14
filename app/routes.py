@@ -352,10 +352,6 @@ def logout():
 # generate new playlist based on selected user playlist
 @webapp.route('/generation/<id>')
 def generate(id):
-    '''access_token = ''
-    token_info = sp_oauth.get_cached_token()
-    if token_info:
-        access_token = token_info['access_token']'''
     global sp_token
         
     access_token = ''
@@ -408,30 +404,12 @@ def generate(id):
         response = sp.playlist_tracks(id,
                                       offset=offset,
                                       fields='items.track.id,total')
-        #pprint(response)
-        #print("items ", response['items'])
 
         offset = offset + len(response['items'])
         track_ids = track_ids + [d['track']['id'] for d in response['items']]
-        #print(offset, "/", response['total'])
 
         if len(response['items']) == 0:
             break
-
-    '''pl_art_names = []
-    pl_art_ids = []
-    pl_art_genres = []
-    for track in track_ids:
-        # urn = 'spotify:track:6TqXcAFInzjp0bODyvrWEq'
-        uri = 'spotify:track:' + str(track)
-        track = sp.track(uri)
-        # art_name = track['album']['artists'][0]['name']
-        pl_art_names = pl_art_names + [d['name'] for d in track['artists']]
-        pl_art_ids = pl_art_ids + [d['id'] for d in track['artists']]
-
-    for artist in pl_art_ids:
-        art_genre = sp.artists(artist)
-        pl_art_genres.append(art_genre)'''
     
     pl_art_ids_dict = {}
     pl_art_names_dict = {}
@@ -491,6 +469,7 @@ def generate(id):
     table.put_item(Item={
                       'created_on_by': pid,
                       'inspired_by': pl_name,
+                      'track_ids': gen_track_ids,
                       'track_names': gen_track_names,
                       'track_artists': gen_track_artists,
                       'track_covers': gen_track_covers,
@@ -519,11 +498,21 @@ def generate(id):
                             }
                             )
 
+    response = table.get_item(Key={'id': uid},
+                              AttributesToGet=[
+                                               'recommendation',
+                                               ]
+                              )
+    try:
+        recommendation = response['Item']['recommendation']
+    except:
+        recommendation = 'false'
+
     return render_template('home.html', playlist_names=pl_names, playlist_descriptions=pl_descriptions,\
                            playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts, user_avator=user_avator,\
                            playlist_ids=json.dumps(pl_ids), gen_track_names=gen_track_names, gen_track_artists=gen_track_artists,\
                            gen_track_covers=gen_track_covers, gen_track_previews=gen_track_previews, gen_artists=json.dumps(gen_art_names),\
-                           gen_genres=json.dumps(gen_art_genres), pl_name=pl_name, close_def=close_def, close_hov=close_hov, playlist_icon = playlist_icon)
+                           gen_genres=json.dumps(gen_art_genres), pl_name=pl_name, close_def=close_def, close_hov=close_hov, playlist_icon = playlist_icon, recommendation=recommendation, pid=pid)
 
 # previuosly generated playlists
 @webapp.route('/history')
@@ -578,10 +567,10 @@ def history():
                 pass
         info = sorted(info, key=lambda kv: kv['created_on_by'], reverse=True)
         info = info[0:min(20, len(info))]
-        return render_template('history.html', playlists=json.dumps(info, cls=DecimalEncoder), user_avator=user_avator)
+        return render_template('history.html', playlists=json.dumps(info, cls=DecimalEncoder), user_avator=user_avator,  close_def=close_def, close_hov=close_hov, playlist_icon = playlist_icon,)
 
-@webapp.route('/export', methods=['POST'])
-def export():
+@webapp.route('/export/<pid>', methods=['POST'])
+def export(pid):
 
     global sp_token
 
@@ -624,7 +613,10 @@ def export():
     sp.user_playlist_create(user_id, playlistName_new)
     playlists = sp.current_user_playlists()
     playlist_id = next(item[1]['id'] for item in enumerate(playlists['items']) if item[1]['name'] == playlistName_new)
-    sp.user_playlist_add_tracks(user_id, playlist_id, gen_track_ids)
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(DYNAMO_PLAYLIST_TABLE_NAME)
+    tids = table.get_item(Key={'created_on_by':pid}, AttributesToGet=['track_ids'])['Item']['track_ids']
+    sp.user_playlist_add_tracks(user=user_id, playlist_id=playlist_id, tracks=tids)
 
     return render_template('home.html', playlist_names=pl_names, playlist_descriptions=pl_descriptions,\
                            playlist_covers=pl_image_urls, playlist_tracks=pl_track_dicts, user_avator=user_avator,\

@@ -330,6 +330,85 @@
         display: flex;
     }
     
+    .ex-mask{
+        width: 100%;height:100%;background: #000;
+        position: absolute;top: 0px;height: 0px;z-index: 8000;
+        opacity:0.4; filter: Alpha(opacity=40);
+    }
+    
+    .ex-window{
+        width: 300px;height: auto;display: none;
+        position: absolute;z-index: 9000;
+        top: 0px;left: 0px;
+        border: 1px solid #D5D5D5;background: #fff;
+    }
+    
+    .ex-window a{text-decoration: none;}
+    
+    .ex-window-title{
+        height: 48px;line-height: 48px; padding:0px 20px;color: #535353;font-size: 16px;font-weight: 800;
+        border-bottom: 1px solid #efefef;background: #fff3f4;
+        cursor: move;
+        user-select:none;
+    }
+    
+    .ex-window-closebutton{
+        width: 16px;height: 16px;display: block;
+        position: absolute;top: 12px;right: 20px;
+        background: url('{{close_def}}') no-repeat;cursor: pointer;
+    }
+    
+    .ex-window-closebutton:hover{background:url('{{close_hov}}');}
+    
+    .ex-window-content{
+        padding: 15px 20px;
+    }
+    
+    .ex-window-pt15{
+        padding-top: 15px;
+    }
+    
+    .ex-window-l40{
+        height: 40px;line-height: 40px;
+        text-align: right;
+    }
+    
+    .ex-window-input{
+        width: 100%;height: 50px;
+        margin: 0px;padding:0px;
+        border: 1px solid #d5d5d5;
+        font-size: 16px;color: #3a3a3a;
+        text-indent: 55px;
+        outline: none;
+        border-radius: 10px
+    }
+    
+    .ex-window-input-playlistname{
+        background: url('{{playlist_icon}}') no-repeat 2px ;
+    }
+    
+    .ex-window-submit{
+        width: 80%;height: 50px;background: #1db954;border:initial;font-size: 16px;color: #e7e7e7;
+        margin: auto;
+        outline: none;text-decoration: none;
+        display: block;text-align: center;line-height: 50px;
+        font-weight: 600;
+        border-radius: 50px
+    }
+    
+    .ex-window-submit:hover{
+        background: #1fdd58;
+        color: #fff;
+        font-size: 17px;
+    }
+    
+    .ex-window-msg{
+        height: 30px;line-height: 30px;
+        text-align: left;
+        color: #d90000;
+    }
+
+    
     </style>
 </head>
 <body>
@@ -362,7 +441,36 @@
         
         <div class='nav-button' style='position:absolute; top:30px; right:30px;'><a href='{{url_for('logout')}}' style='color: #fff;'>LOGOUT</a></div>
         <div class='nav-button' style='position:absolute; top:30px; left:30px;'><a href='{{url_for('home')}}' style='color: #fff;'>BACK</a></div>
-        <div id='export-button' class='nav-button element-hidden' style='position:absolute; bottom:30px; right:30px;'><a href='#' style='color: #fff;'>EXPORT</a></div>
+        
+        <!-- Export Playlist -->
+        <div class='nav-button' style='position:absolute; bottom:30px; right:30px;'>
+            <a href='javascript:showEXWindow()' style='color: #fff;'>EXPORT</a>
+        </div>
+        
+        <div class='ex-mask' id='mask' onselectstart='return false'></div>
+        
+        <div class='ex-window' id='winMove' onselectstart='return false;'>
+            <div class='ex-window-title' id='winDrag' onselectstart='return false;'>
+                Export Your Playlist
+                <a class='ex-window-closebutton' href='javascript:hideWindow();'></a>
+            </div>
+            
+            <form id='export-form' action='/export' method="POST">
+                <div class='ex-window-content'>
+                    <div class='ex-window-140 ex-window-pt15'>
+                        <input class='ex-window-input ex-window-input-playlistname' type='text' placeholder='New Playlist Name' value='' name='plName'>
+                            </div>
+                    <div class='ex-window-msg'>
+                        <p>
+                        </p>
+                    </div>
+                    <div>
+                        <input class='ex-window-submit'  type='submit' value='Create & Export Playlist' >
+                            </div>
+                </div>
+            </form>
+            
+        </div>
         
         <div id="avatar"></div>
         
@@ -386,11 +494,13 @@
         
         function showTracks(index, obj) {
             try {
-                document.getElementById("export-button").classList.remove("element-hidden");
+                document.getElementById("export-form").classList.remove("element-hidden");
             }
             catch(err) {
                 
             }
+            
+            document.getElementById("export-form").action = "/export/".concat(playlists[index]['created_on_by']);
             
             var e = document.getElementById("tracks").getElementsByClassName("music-playlist")[0].getElementsByClassName("playlist-box")[0];
             
@@ -449,7 +559,103 @@
         }
     </script>
     
-
+    <!-- Export window script -->
+    <script type='text/javascript'>
+        
+        var winInstance , onMoveStartId , mousePos = {x:0,y:0};
+        
+        function g(id){return document.getElementById(id);}
+        
+        function autoCenter( el ){
+            var bodyW = document.documentElement.clientWidth;
+            var bodyH = document.documentElement.clientHeight;
+            
+            var elW = el.offsetWidth;
+            var elH = el.offsetHeight;
+            
+            el.style.left = (bodyW-elW)/2 + 'px';
+            el.style.top = (bodyH-elH)/2 + 'px';
+        }
+    
+    function fillToBody( el ){
+        el.style.width  = document.documentElement.clientWidth  +'px';
+        el.style.height = document.documentElement.clientHeight + 'px';
+    }
+    
+    function Window( dragId , moveId ){
+        
+        var instance = {} ;
+        
+        instance.dragElement  = g(dragId);
+        instance.moveElement  = g(moveId);
+        
+        instance.mouseOffsetLeft = 0;
+        instance.mouseOffsetTop = 0;
+        
+        instance.dragElement.addEventListener('mousedown',function(e){
+                                              
+                                              var e = e || window.event;
+                                              
+                                              winInstance = instance;
+                                              instance.mouseOffsetLeft = e.pageX - instance.moveElement.offsetLeft ;
+                                              instance.mouseOffsetTop  = e.pageY - instance.moveElement.offsetTop ;
+                                              
+                                              onMoveStartId = setInterval(onMoveStart,10);
+                                              return false;
+                                              // instance.moveElement.style.zIndex = zIndex ++;
+                                              })
+                                              
+                                              return instance;
+    }
+    
+    document.onmouseup = function(e){
+        winInstance = false;
+        clearInterval(onMoveStartId);
+    }
+    document.onmousemove = function( e ){
+        var e = window.event || e;
+        mousePos.x = e.clientX;
+        mousePos.y = e.clientY;
+        
+        e.stopPropagation && e.stopPropagation();
+        e.cancelBubble = true;
+        e = this.originalEvent;
+        e && ( e.preventDefault ? e.preventDefault() : e.returnValue = false );
+        
+        document.body.style.MozUserSelect = 'none';
+    }
+    
+    function onMoveStart(){
+        
+        var instance = winInstance;
+        if (instance) {
+            var maxX = document.documentElement.clientWidth -  instance.moveElement.offsetWidth;
+            var maxY = document.documentElement.clientHeight - instance.moveElement.offsetHeight ;
+            
+            instance.moveElement.style.left = Math.min( Math.max( ( mousePos.x - instance.mouseOffsetLeft) , 0 ) , maxX) + "px";
+            instance.moveElement.style.top  = Math.min( Math.max( ( mousePos.y - instance.mouseOffsetTop ) , 0 ) , maxY) + "px";
+        }
+    }
+    
+    function showEXWindow(){
+        g('winMove').style.display = 'block';
+        g('mask').style.display = 'block';
+        autoCenter( g('winMove') );
+        fillToBody( g('mask') );
+    }
+    
+    function hideWindow(){
+        g('winMove').style.display = 'none';
+        g('mask').style.display = 'none';
+    }
+    
+    // window.onresize = showEXWindow;
+    
+    Window('winDrag','winMove');
+    
+    showExWindow();
+        </script>
+    
     </script>
 </body>
 </html>

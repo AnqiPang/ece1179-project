@@ -561,7 +561,7 @@
                 <a class='ex-window-closebutton' href='javascript:hideWindow();'></a>
             </div>
 
-            <form action='/export' method="POST">
+            <form action='/export/{{pid}}' method="POST">
                 <div class='ex-window-content'>
                     <div class='ex-window-140 ex-window-pt15'>
                         <input class='ex-window-input ex-window-input-playlistname' type='text' placeholder='New Playlist Name' value='' name='plName'>
@@ -721,10 +721,10 @@
 
     <script type="text/javascript">
     function toggle2_fun(){
-        var checked_value = document.getElementById("toggle2").checked
+        var checked_value = document.getElementById("toggle2").checked;
 
         $.ajax({
-            url:'http://127.0.0.1:5000/toggle',
+            url:'/toggle',
             type:'POST',
             data: {
                 toggle_value: checked_value
